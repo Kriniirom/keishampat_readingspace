@@ -18,7 +18,7 @@ export default function BookPage() {
   const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'canvas' | 'grid'>('canvas');
+  const [viewMode, setViewMode] = useState<'canvas' | 'grid'>('grid');
 
   const loadSeats = async () => {
     try {
@@ -33,6 +33,10 @@ export default function BookPage() {
   };
 
   useEffect(() => {
+    // Default to Konva Floor Plan on desktop (width >= 768), Grid View on mobile for zero lag
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+      setViewMode('canvas');
+    }
     loadSeats();
   }, []);
 

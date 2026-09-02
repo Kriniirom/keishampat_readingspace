@@ -30,25 +30,12 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
   const [stageScale, setStageScale] = useState(1);
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
   const [hoveredSeat, setHoveredSeat] = useState<Seat | null>(null);
-  const [fanRotation, setFanRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
   // Client-side mount check
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  // Animate ceiling fan blades smoothly
-  useEffect(() => {
-    if (!isMounted) return;
-    let animId: number;
-    const animate = () => {
-      setFanRotation((prev) => (prev + 1.5) % 360);
-      animId = requestAnimationFrame(animate);
-    };
-    animId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animId);
-  }, [isMounted]);
 
   // Container Responsive Auto-fit Scale
   useEffect(() => {
@@ -229,14 +216,16 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
             }}
             className="cursor-grab active:cursor-grabbing rounded-2xl"
           >
-            {/* LAYER 1: ROOM BLUEPRINT */}
-            <Layer>
+            {/* LAYER 1: STATIC ARCHITECTURAL BACKGROUND (listening={false} for 60 FPS mobile performance) */}
+            <Layer listening={false}>
               <Rect
                 x={0}
                 y={0}
                 width={STAGE_WIDTH}
                 height={STAGE_HEIGHT}
-                fill="#FAF7F0"
+                fill="#FDFBF7"
+                stroke="#EAE3D5"
+                strokeWidth={2}
                 cornerRadius={16}
               />
 
@@ -291,17 +280,17 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
                 <Rect x={15} y={35} width={20} height={15} fill="#E2D8C7" stroke="#8C7F6B" strokeWidth={1.5} cornerRadius={3} />
                 <Line points={[25, 20, 25, 35]} stroke="#8C7F6B" strokeWidth={3} />
                 <Circle x={25} y={15} radius={18} fill="#DBEAFE" stroke="#3B82F6" strokeWidth={2} />
-                <Arc x={25} y={15} innerRadius={0} outerRadius={14} angle={60} rotation={fanRotation} fill="#60A5FA" />
-                <Arc x={25} y={15} innerRadius={0} outerRadius={14} angle={60} rotation={fanRotation + 120} fill="#60A5FA" />
-                <Arc x={25} y={15} innerRadius={0} outerRadius={14} angle={60} rotation={fanRotation + 240} fill="#60A5FA" />
+                <Arc x={25} y={15} innerRadius={0} outerRadius={14} angle={60} rotation={0} fill="#60A5FA" />
+                <Arc x={25} y={15} innerRadius={0} outerRadius={14} angle={60} rotation={120} fill="#60A5FA" />
+                <Arc x={25} y={15} innerRadius={0} outerRadius={14} angle={60} rotation={240} fill="#60A5FA" />
                 <Circle x={25} y={15} radius={4} fill="#1D4ED8" />
               </Group>
 
               {/* Ceiling Fan 1 */}
               <Group x={STAGE_WIDTH / 2 - 15} y={300}>
                 <Circle x={0} y={0} radius={10} fill="#1E2421" stroke="#000000" strokeWidth={2} />
-                {Array.from({ length: 3 }).map((_, idx) => {
-                  const angleRad = ((fanRotation + idx * 120) * Math.PI) / 180;
+                {[0, 120, 240].map((deg, idx) => {
+                  const angleRad = (deg * Math.PI) / 180;
                   return (
                     <Line
                       key={`fan1-b-${idx}`}
@@ -318,8 +307,8 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
               {/* Ceiling Fan 2 */}
               <Group x={STAGE_WIDTH / 2 - 15} y={550}>
                 <Circle x={0} y={0} radius={10} fill="#1E2421" stroke="#000000" strokeWidth={2} />
-                {Array.from({ length: 3 }).map((_, idx) => {
-                  const angleRad = ((fanRotation * 1.1 + idx * 120) * Math.PI) / 180;
+                {[30, 150, 270].map((deg, idx) => {
+                  const angleRad = (deg * Math.PI) / 180;
                   return (
                     <Line
                       key={`fan2-b-${idx}`}
