@@ -34,7 +34,7 @@ const getAllSeats = (req, res) => {
  */
 const createBooking = (req, res) => {
   try {
-    const { seatId, fullName, phone, email, startDate, planType, notes } = req.body;
+    const { seatId, fullName, phone, address, startDate, durationMonths, totalAmount, planType, paymentMethod, transactionRef, notes } = req.body;
 
     // Validate required fields
     if (!seatId || !fullName || !phone || !startDate) {
@@ -61,16 +61,24 @@ const createBooking = (req, res) => {
       });
     }
 
+    const duration = Number(durationMonths) || 1;
+    const finalPrice = Number(totalAmount) || (seat.pricePerMonth * duration);
+
     // Create booking record
+    const isCash = paymentMethod === 'cash';
     const newBooking = {
       id: `BK-${Date.now()}`,
       seatId: seat.id,
       seatNumber: seat.seatNumber,
       fullName,
       phone,
-      email: email || '',
+      address: address || '',
       startDate,
-      planType: planType || 'Monthly (₹900/mo)',
+      durationMonths: duration,
+      totalAmount: finalPrice,
+      planType: planType || `${duration} Month Subscription (₹${finalPrice})`,
+      paymentMethod: isCash ? 'Cash at Counter' : 'UPI Payment',
+      transactionRef: transactionRef || '',
       notes: notes || '',
       createdAt: new Date().toISOString(),
       status: 'Confirmed'
@@ -83,9 +91,13 @@ const createBooking = (req, res) => {
     // Push to bookings log
     bookings.push(newBooking);
 
+    const successMsg = isCash
+      ? `Booking submitted for ${seat.seatNumber}! Please inform the receptionist at the counter in person OR send a message on WhatsApp (+91 98634 29955) after giving the cash for verification.`
+      : `Successfully booked ${seat.seatNumber}! We look forward to welcoming you at Keishampat Reading Space.`;
+
     return res.status(201).json({
       success: true,
-      message: `Successfully booked ${seat.seatNumber}! We look forward to welcoming you at Keishampat Reading Space.`,
+      message: successMsg,
       booking: newBooking
     });
   } catch (error) {

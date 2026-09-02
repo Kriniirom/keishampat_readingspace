@@ -41,9 +41,13 @@ export interface BookingPayload {
   seatId: number;
   fullName: string;
   phone: string;
-  email?: string;
+  address?: string;
   startDate: string;
+  durationMonths?: number;
+  totalAmount?: number;
   planType?: string;
+  paymentMethod?: 'upi' | 'cash';
+  transactionRef?: string;
   notes?: string;
 }
 
