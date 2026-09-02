@@ -44,20 +44,26 @@ export const BookingModal: React.FC<BookingModalProps> = ({ seat, isOpen, onClos
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [createdBookingId, setCreatedBookingId] = useState('');
 
   if (!isOpen || !seat) return null;
 
   const monthlyPrice = seat.pricePerMonth || 900;
   const totalAmount = monthlyPrice * durationMonths;
 
+  const upiDetailsStr = paymentMethod === 'upi' && transactionRef.trim()
+    ? ` (UPI Transaction UTR/ID: ${transactionRef.trim()})`
+    : '';
+
   const whatsappMessage = encodeURIComponent(
-    `Hello Keishampat Reading Space, I am submitting a Cash Payment of ₹${totalAmount} for ${seat.seatNumber} (${durationMonths} Month${durationMonths > 1 ? 's' : ''}, Student Name: ${fullName || 'Student'}, Phone: ${phone || 'N/A'}, Address: ${address || 'N/A'}). Please verify my cash payment.`
+    `Hello Keishampat Reading Space, I am submitting a ${paymentMethod === 'cash' ? 'Cash' : 'UPI'} Payment of ₹${totalAmount} for ${seat.seatNumber} (${durationMonths} Month${durationMonths > 1 ? 's' : ''}, Booking ID: ${createdBookingId || 'Pending'}${upiDetailsStr}, Student: ${fullName || 'Student'}, Phone: ${phone || 'N/A'}, Address: ${address || 'N/A'}). Please verify my payment for instant seat approval.`
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
+    setCreatedBookingId('');
 
     if (!fullName.trim() || !phone.trim() || !startDate) {
       setErrorMessage('Please fill in your full name, phone number, and preferred start date.');
@@ -80,11 +86,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({ seat, isOpen, onClos
         notes: notes.trim(),
       });
 
+      setCreatedBookingId(res.bookingId || '');
       setSuccessMessage(res.message || `Seat #${seat.id} reserved successfully!`);
       setTimeout(() => {
         onSuccess();
         onClose();
-      }, 3500);
+      }, 5000);
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to complete seat booking. Please try again.');
     } finally {
@@ -141,18 +148,25 @@ export const BookingModal: React.FC<BookingModalProps> = ({ seat, isOpen, onClos
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                   <span>Booking Submitted Successfully!</span>
                 </div>
-                <p className="text-xs leading-relaxed text-emerald-800">{successMessage}</p>
-                {paymentMethod === 'cash' && (
-                  <a
-                    href={`https://wa.me/919863429955?text=${whatsappMessage}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-all shadow-sm mt-1"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    <span>Verify via WhatsApp (+91 98634 29955)</span>
-                  </a>
+
+                {createdBookingId && (
+                  <div className="bg-emerald-800 text-white px-3 py-1.5 rounded-lg flex items-center justify-between text-xs font-bold shadow-sm">
+                    <span className="text-emerald-200">BOOKING ID:</span>
+                    <span className="font-mono text-sm text-amber-300 tracking-wider">{createdBookingId}</span>
+                  </div>
                 )}
+
+                <p className="text-xs leading-relaxed text-emerald-800">{successMessage}</p>
+                
+                <a
+                  href={`https://wa.me/919863429955?text=${whatsappMessage}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-all shadow-sm mt-1"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Verify Payment via WhatsApp (+91 98634 29955)</span>
+                </a>
               </div>
             )}
 

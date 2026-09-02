@@ -19,11 +19,10 @@ interface SeatGridProps {
 export const SeatGrid: React.FC<SeatGridProps> = ({ seats, selectedSeatId, onSelectSeat }) => {
   const rawSeats = seats && seats.length > 0 ? seats : Array.from({ length: 18 }, (_, index) => {
     const id = index + 1;
-    const isOccupied = id === 3 || id === 7 || id === 12;
     return {
       id,
       seatNumber: `Seat #${id.toString().padStart(2, '0')}`,
-      status: isOccupied ? ('occupied' as const) : ('available' as const),
+      status: 'available' as const,
       type: id <= 9 ? 'Standard Desk' : 'Premium Quiet Zone Desk',
       pricePerMonth: 900,
       hasPowerSocket: true,

@@ -65,14 +65,13 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
     return () => window.removeEventListener('resize', handleResize);
   }, [isMounted]);
 
-  // Fallback & filter to strictly 18 study seats (IDs 1-18)
+  // Fallback template for 18 study seats (IDs 1-18)
   const rawSeats: Seat[] = seats && seats.length > 0 ? seats : Array.from({ length: 18 }, (_, index) => {
     const id = index + 1;
-    const isOccupied = id === 3 || id === 7 || id === 12;
     return {
       id,
       seatNumber: `Seat #${id.toString().padStart(2, '0')}`,
-      status: isOccupied ? ('occupied' as const) : ('available' as const),
+      status: 'available' as const,
       type: id <= 9 ? 'Standard Desk' : 'Premium Quiet Zone Desk',
       pricePerMonth: 900,
       hasPowerSocket: true,
