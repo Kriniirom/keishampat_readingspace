@@ -31,20 +31,26 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
   const [hoveredSeat, setHoveredSeat] = useState<Seat | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Client-side mount check
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Container Responsive Auto-fit Scale
+  // Container Responsive Auto-fit Scale & Mobile Detection
   useEffect(() => {
     if (!isMounted) return;
     const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setStagePos({ x: 0, y: 0 }); // Reset position fixed in middle on mobile
+      }
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth;
-        const newScale = Math.min(1, (containerWidth - 32) / STAGE_WIDTH);
-        setScale(newScale > 0.4 ? newScale : 0.4);
+        const newScale = Math.min(1, (containerWidth - 24) / STAGE_WIDTH);
+        setScale(newScale > 0.35 ? newScale : 0.35);
       }
     };
     handleResize();
@@ -206,15 +212,17 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
             height={STAGE_HEIGHT}
             scaleX={scale * stageScale}
             scaleY={scale * stageScale}
-            x={stagePos.x}
-            y={stagePos.y}
-            draggable
+            x={isMobile ? 0 : stagePos.x}
+            y={isMobile ? 0 : stagePos.y}
+            draggable={!isMobile}
             onDragStart={() => setIsDragging(true)}
             onDragEnd={(e) => {
-              setIsDragging(false);
-              setStagePos({ x: e.target.x(), y: e.target.y() });
+              if (!isMobile) {
+                setIsDragging(false);
+                setStagePos({ x: e.target.x(), y: e.target.y() });
+              }
             }}
-            className="cursor-grab active:cursor-grabbing rounded-2xl"
+            className={isMobile ? 'rounded-2xl touch-pan-y' : 'cursor-grab active:cursor-grabbing rounded-2xl'}
           >
             {/* LAYER 1: STATIC ARCHITECTURAL BACKGROUND (listening={false} for 60 FPS mobile performance) */}
             <Layer listening={false}>
