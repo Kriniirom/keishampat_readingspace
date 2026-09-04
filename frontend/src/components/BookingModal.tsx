@@ -70,6 +70,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({ seat, isOpen, onClos
       return;
     }
 
+    if (paymentMethod === 'upi' && !transactionRef.trim()) {
+      setErrorMessage('Please enter your UPI Transaction ID / UTR number (e.g. 89525662566) for payment verification.');
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await bookSeatApi({
@@ -337,16 +342,21 @@ export const BookingModal: React.FC<BookingModalProps> = ({ seat, isOpen, onClos
                   Pay ₹{totalAmount} for {durationMonths} month{durationMonths > 1 ? 's' : ''} via GPay, PhonePe, or Paytm to <strong>9863429955</strong>.
                 </p>
                 <div>
-                  <label className="text-[10px] font-bold text-emerald-950 block mb-1">
-                    UPI Transaction ID / UTR (Optional)
+                  <label className="text-[10px] font-bold text-emerald-950 flex items-center justify-between mb-1">
+                    <span>UPI Transaction ID / UTR Number *</span>
+                    <span className="text-[9px] font-medium text-emerald-700">Required for verification</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. 423985109283"
+                    required={paymentMethod === 'upi'}
+                    placeholder="e.g. 89525662566"
                     value={transactionRef}
                     onChange={(e) => setTransactionRef(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-lg border border-emerald-300 bg-white text-xs text-emerald-950 outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    className="w-full px-3 py-2 rounded-lg border-2 border-emerald-300 bg-white text-xs font-semibold text-emerald-950 placeholder-emerald-400 outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600"
                   />
+                  <p className="text-[10px] text-emerald-700 mt-1 font-medium">
+                    Enter the 12-digit UTR/Ref number from your GPay, PhonePe, or Paytm receipt.
+                  </p>
                 </div>
               </div>
             )}
