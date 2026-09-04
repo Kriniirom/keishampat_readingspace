@@ -1,8 +1,8 @@
 /**
  * @file VisitorTracker.tsx
- * @description Lightweight, privacy-friendly automatic visitor tracking component.
- * Logs Date & Time, Page Visited, Device, Approximate City, and Referrer (Came From)
- * directly into a 'Visitors' tab in your Google Sheet.
+ * @description Robust, mobile-optimized automatic visitor tracking component.
+ * Immediately logs Date & Time, Page Visited, Device, Approximate City, and Referrer
+ * directly into the 'Visitors' tab in your Google Sheet.
  */
 
 'use client';
@@ -12,7 +12,7 @@ import { usePathname } from 'next/navigation';
 import { APPS_SCRIPT_URL } from '../lib/api';
 
 function getDeviceType(): string {
-  if (typeof window === 'undefined') return 'Unknown';
+  if (typeof window === 'undefined') return 'Unknown Device';
   const ua = navigator.userAgent || '';
   if (/Android/i.test(ua)) return 'Mobile (Android)';
   if (/iPhone/i.test(ua)) return 'Mobile (iPhone)';
@@ -20,7 +20,7 @@ function getDeviceType(): string {
   if (/Windows/i.test(ua)) return 'Desktop (Windows)';
   if (/Macintosh|Mac OS X/i.test(ua)) return 'Desktop (Mac)';
   if (/Linux/i.test(ua)) return 'Desktop (Linux)';
-  return 'Other Device';
+  return 'Mobile Device';
 }
 
 function getReferrerSource(): string {
@@ -41,6 +41,24 @@ function getReferrerSource(): string {
   }
 }
 
+function getSafeStorage(key: string): string | null {
+  try {
+    return typeof window !== 'undefined' && window.sessionStorage ? sessionStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setSafeStorage(key: string, value: string) {
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      sessionStorage.setItem(key, value);
+    }
+  } catch {
+    // Ignore storage errors in strict private/incognito modes
+  }
+}
+
 export default function VisitorTracker() {
   const pathname = usePathname();
   const lastLoggedPath = useRef<string | null>(null);
@@ -48,63 +66,76 @@ export default function VisitorTracker() {
   useEffect(() => {
     if (!pathname || pathname === lastLoggedPath.current) return;
 
-    // Prevent logging duplicate hits within the same session
-    const sessionKey = `krs_visited_${pathname}`;
-    if (sessionStorage.getItem(sessionKey)) return;
+    // Avoid multiple duplicate entries on quick re-renders
+    const sessionKey = `krs_visit_${pathname}`;
+    if (getSafeStorage(sessionKey)) return;
 
-    const recordVisit = async () => {
-      lastLoggedPath.current = pathname;
-      sessionStorage.setItem(sessionKey, 'true');
+    lastLoggedPath.current = pathname;
+    setSafeStorage(sessionKey, '1');
 
-      let city = 'Detecting...';
-      try {
-        // Cached city in session
-        const cachedCity = sessionStorage.getItem('krs_visitor_city');
-        if (cachedCity) {
-          city = cachedCity;
-        } else {
-          // Free, fast IP geolocation lookup with 2.5s timeout
+    const sendLog = async () => {
+      let approximateCity = 'Imphal / India';
+
+      // 1. Check cached city
+      const cached = getSafeStorage('krs_city');
+      if (cached) {
+        approximateCity = cached;
+      } else {
+        // 2. Quick non-blocking IP check (max 1.2s timeout so mobile never hangs)
+        try {
           const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 2500);
+          const timer = setTimeout(() => controller.abort(), 1200);
           const res = await fetch('https://ipapi.co/json/', { signal: controller.signal });
           clearTimeout(timer);
-
           if (res.ok) {
             const data = await res.json();
-            const cityName = data.city || '';
-            const region = data.region || data.region_code || '';
-            city = cityName ? `${cityName}${region ? `, ${region}` : ''}` : (data.country_name || 'India');
-            sessionStorage.setItem('krs_visitor_city', city);
-          } else {
-            city = 'Local / India';
+            const c = data.city || '';
+            const r = data.region || data.region_code || '';
+            approximateCity = c ? `${c}${r ? `, ${r}` : ''}` : (data.country_name || 'India');
+            setSafeStorage('krs_city', approximateCity);
           }
+        } catch {
+          // Fallback based on timezone
+          try {
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (tz && tz.includes('Kolkata')) {
+              approximateCity = 'India (IST)';
+            }
+          } catch {}
         }
-      } catch {
-        city = 'Local / India';
       }
 
       const payload = {
         action: 'logVisit',
         page: pathname,
         device: getDeviceType(),
-        city: city || 'Unknown City',
+        city: approximateCity,
         cameFrom: getReferrerSource(),
         timestamp: new Date().toISOString(),
       };
 
       try {
+        // Use keepalive: true so mobile browsers don't drop request on backgrounding
         await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payload),
+          keepalive: true,
         });
-      } catch {
-        // Silent fail so it never affects user browsing experience
+      } catch (err) {
+        // Fallback with navigator.sendBeacon for mobile if fetch fails
+        try {
+          if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+            navigator.sendBeacon(APPS_SCRIPT_URL, JSON.stringify(payload));
+          }
+        } catch {}
       }
     };
 
-    recordVisit();
+    // Small 200ms delay to allow page hydration to finish smoothly on mobile
+    const timeout = setTimeout(sendLog, 200);
+    return () => clearTimeout(timeout);
   }, [pathname]);
 
   return null;
