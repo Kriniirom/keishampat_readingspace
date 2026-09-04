@@ -280,6 +280,23 @@ export const bookSeatApi = async (payload: BookingPayload) => {
 export const fetchPlans = async (): Promise<MembershipPlan[]> => {
   return [
     {
+      id: 'daily-pass',
+      title: '1-Day Access Pass',
+      price: 50,
+      currency: '₹',
+      billingCycle: 'per day',
+      popular: false,
+      description: 'Single-day access to an available study desk from 5:00 AM to 11:00 PM.',
+      features: [
+        'Single-day desk access',
+        'Operating hours: 5:00 AM – 11:00 PM',
+        'High-Speed Wi-Fi internet access',
+        'CCTV monitored 24/7 safety & security',
+        'Individual power socket & desk lamp',
+        'Ideal for trial visits & mock exam days',
+      ],
+    },
+    {
       id: 'monthly-full',
       title: 'Monthly Full Access Pass',
       price: 900,
@@ -293,6 +310,23 @@ export const fetchPlans = async (): Promise<MembershipPlan[]> => {
         'High-Speed Wi-Fi internet access',
         'CCTV monitored 24/7 safety & security',
         'Silent, distraction-free environment',
+        'Individual power socket & desk lamp',
+      ],
+    },
+    {
+      id: 'quarterly-pass',
+      title: '3-Month Quarterly Pass',
+      price: 2500,
+      currency: '₹',
+      billingCycle: 'for 3 months',
+      popular: false,
+      description: 'Continuous 3-month dedicated desk reservation for intensive study & exam preparation.',
+      features: [
+        'Guaranteed dedicated desk for 90 days',
+        'Operating hours: 5:00 AM – 11:00 PM (Everyday)',
+        'High-Speed Wi-Fi internet access',
+        'CCTV monitored 24/7 safety & security',
+        'Save ₹200 compared to monthly renewal',
         'Individual power socket & desk lamp',
       ],
     },
