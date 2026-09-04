@@ -134,53 +134,83 @@ export const fetchSeats = async (): Promise<{ seats: Seat[]; totalSeats: number;
     console.warn('Google Sheets API GET notice, using local optimistic cache:', error.message);
   }
 
-  // Combine Google Sheet rows with local submitted bookings
-  const localBookings = getLocalBookings();
-  const allBookings = [...localBookings, ...sheetBookings];
+  // 1. Reverse so the newest/latest row in Google Sheet takes priority!
+  const reversedSheetBookings = [...sheetBookings].reverse();
+
+  // 2. Clean local storage: If Google Sheet already has the record or says expired, prune local bookings
+  const localBookings = getLocalBookings().filter((localB: any) => {
+    const alreadyInSheet = sheetBookings.some((sb: any) =>
+      (sb.bookingId && sb.bookingId === localB.bookingId) ||
+      (sb.seatId && sb.seatId === localB.seatId)
+    );
+    return !alreadyInSheet;
+  });
 
   const todayDate = new Date();
   todayDate.setHours(0, 0, 0, 0);
 
   seats.forEach((seat) => {
-    // Find row matching this exact seat ID using exact numeric parsing
-    const match = allBookings.find((b: any) => {
+    // Check if there is an un-synced local booking just submitted on this device (<10 min ago)
+    const localMatch = localBookings.find((b: any) => b.seatId === seat.id);
+    if (localMatch) {
+      seat.status = 'occupied';
+      seat.reservedBy = {
+        name: localMatch.name || 'Booked Member',
+        phone: localMatch.phone || '',
+      };
+      return;
+    }
+
+    // Find the MOST RECENT record for this seat in Google Sheets (scanning newest first)
+    const match = reversedSheetBookings.find((b: any) => {
       if (typeof b.seatId === 'number' && b.seatId === seat.id) {
         return true;
       }
 
       const rawSeat = String(b.seat || b.seatId || b.Seat || '').trim();
-      // Extract only digits from strings like "Seat #01", "Seat 1", "#01", "Seat #10"
       const digits = rawSeat.replace(/\D/g, '');
       if (digits.length > 0) {
-        return parseInt(digits, 10) === seat.id; // Exact numeric comparison!
+        return parseInt(digits, 10) === seat.id;
       }
       return false;
     });
 
     if (match) {
-      const statusStr = String(match.status || match.Status || '').toLowerCase();
+      const statusStr = String(match.status || match.Status || '').trim().toLowerCase();
       const expiryStr = String(match.expiry || match.Expiry || '').trim();
 
-      // Check if booking membership has expired
-      let isExpired = false;
+      // Check if status is explicitly freed or expired by admin in Google Sheet
+      const isExplicitlyAvailable = (
+        statusStr === 'expired' ||
+        statusStr.includes('expired') ||
+        statusStr.includes('cancel') ||
+        statusStr.includes('avail') ||
+        statusStr.includes('vacant') ||
+        statusStr.includes('free')
+      );
+
+      // Check if date has expired (yesterday or earlier)
+      let isDateExpired = false;
       if (expiryStr) {
         try {
-          const expDate = new Date(expiryStr);
+          const expDate = new Date(expiryStr.slice(0, 10));
           if (!isNaN(expDate.getTime()) && expDate < todayDate) {
-            isExpired = true; // Expiry date is in the past -> Seat becomes available again!
+            isDateExpired = true;
           }
-        } catch (e) {
-          // Keep active if date parsing fails
+        } catch {
+          // Keep false
         }
       }
 
-      // Seat is occupied if active/paid/confirmed/pending AND not expired!
-      const isBooked = !isExpired && (
+      // Seat is occupied ONLY if not expired and status is confirmed/active/paid/pending
+      const isBooked = !isExplicitlyAvailable && !isDateExpired && (
+        statusStr.includes('confirm') ||
+        statusStr.includes('comfirm') || // Handles common typo in sheet
         statusStr.includes('active') ||
         statusStr.includes('paid') ||
-        statusStr.includes('confirmed') ||
+        statusStr.includes('pending') ||
         statusStr.includes('booked') ||
-        statusStr.includes('pending')
+        statusStr.includes('occupied')
       );
 
       if (isBooked) {
@@ -189,6 +219,9 @@ export const fetchSeats = async (): Promise<{ seats: Seat[]; totalSeats: number;
           name: match.name || match.Name || 'Booked Member',
           phone: match.phone || match.Phone || '',
         };
+      } else {
+        seat.status = 'available';
+        seat.reservedBy = null;
       }
     }
   });
