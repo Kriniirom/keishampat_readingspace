@@ -6,7 +6,7 @@
  */
 
 // Google Apps Script Web App Endpoint URL
-export const APPS_SCRIPT_URL = 'https://script.google.com/macros/library/d/1miUw5FWPKHTuN981SBZqNZGPAukzyIga1QCkPfcJqrLTtX8XWfO1NGvX/4';
+export const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqNNYRPKLj8nW2yqoegCWULRrfnq9HY8Zvu35CxO0I_rqQtA94-leNwR6CdZAgbewCCg/exec';
 
 /**
  * Seat interface defining individual study cubicle properties (18 total seats)
