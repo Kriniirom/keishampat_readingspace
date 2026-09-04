@@ -13,7 +13,7 @@ export default function FacilitiesPage() {
   const facilityList = [
     {
       icon: Armchair,
-      title: '19 Dedicated Study Desks',
+      title: '18 Dedicated Study Desks',
       desc: 'Spacious individual wooden cubicle desks with ergonomic chairs for long study hours without fatigue.',
     },
     {
