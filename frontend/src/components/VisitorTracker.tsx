@@ -81,25 +81,28 @@ export default function VisitorTracker() {
       if (cached) {
         approximateCity = cached;
       } else {
-        // 2. Quick non-blocking IP check (max 1.2s timeout so mobile never hangs)
+        // 2. Accurate, free IP geolocation lookup via ipwho.is
         try {
           const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 1200);
-          const res = await fetch('https://ipapi.co/json/', { signal: controller.signal });
+          const timer = setTimeout(() => controller.abort(), 2000);
+          const res = await fetch('https://ipwho.is/', { signal: controller.signal });
           clearTimeout(timer);
           if (res.ok) {
             const data = await res.json();
-            const c = data.city || '';
-            const r = data.region || data.region_code || '';
-            approximateCity = c ? `${c}${r ? `, ${r}` : ''}` : (data.country_name || 'India');
-            setSafeStorage('krs_city', approximateCity);
+            if (data && data.success !== false) {
+              const city = data.city || '';
+              const region = data.region || '';
+              const country = data.country || 'India';
+              approximateCity = city ? `${city}, ${region}` : country;
+              setSafeStorage('krs_city', approximateCity);
+            }
           }
         } catch {
           // Fallback based on timezone
           try {
             const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
             if (tz && tz.includes('Kolkata')) {
-              approximateCity = 'India (IST)';
+              approximateCity = 'Imphal / India';
             }
           } catch {}
         }
