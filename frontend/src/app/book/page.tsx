@@ -77,18 +77,18 @@ export default function BookPage() {
               <button
                 onClick={() => setViewMode('canvas')}
                 className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'canvas'
-                    ? 'bg-[#113826] text-white shadow-sm'
-                    : 'text-[#55625B] hover:text-[#113826]'
+                  ? 'bg-[#113826] text-white shadow-sm'
+                  : 'text-[#55625B] hover:text-[#113826]'
                   }`}
               >
                 <Map className="w-3.5 h-3.5" />
-                <span>Konva Floor Plan</span>
+                <span>2D Room Layout</span>
               </button>
               <button
                 onClick={() => setViewMode('grid')}
                 className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'grid'
-                    ? 'bg-[#113826] text-white shadow-sm'
-                    : 'text-[#55625B] hover:text-[#113826]'
+                  ? 'bg-[#113826] text-white shadow-sm'
+                  : 'text-[#55625B] hover:text-[#113826]'
                   }`}
               >
                 <LayoutGrid className="w-3.5 h-3.5" />

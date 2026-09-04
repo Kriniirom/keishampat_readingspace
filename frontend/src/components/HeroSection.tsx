@@ -18,14 +18,14 @@ interface HeroSectionProps {
 export const HeroSection: React.FC<HeroSectionProps> = ({ onBookClick }) => {
   return (
     <section className="relative overflow-hidden bg-[#F8F6F0] min-h-[580px] flex items-center pt-8 pb-16">
-      
+
       {/* Container holding text content (left) and blended background photo (right) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          
+
           {/* Left Column - Headline, Meta info, Badges & CTAs */}
           <div className="lg:col-span-6 space-y-6 pt-4 lg:pt-0">
-            
+
             {/* Top Pill Tag Badge */}
             <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#EDE7DD] border border-[#DDD6C8] text-[#3D4742] text-xs font-bold tracking-wider uppercase">
               <BookOpen className="w-3.5 h-3.5 text-[#113826]" />
@@ -49,7 +49,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onBookClick }) => {
 
             {/* Key Information Metadata List */}
             <div className="space-y-3 pt-2">
-              
+
               {/* Location item */}
               <div className="flex items-center space-x-3 text-[#2C3531]">
                 <MapPin className="w-5 h-5 text-[#113826] flex-shrink-0" />
@@ -65,7 +65,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onBookClick }) => {
               {/* Total Seats item */}
               <div className="flex items-center space-x-3 text-[#2C3531]">
                 <Users className="w-5 h-5 text-[#113826] flex-shrink-0" />
-                <span className="font-semibold text-base sm:text-lg">20 Seats</span>
+                <span className="font-semibold text-base sm:text-lg">18 Seats</span>
               </div>
 
               {/* Pricing item */}
@@ -77,7 +77,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onBookClick }) => {
 
             {/* CTA Action Buttons */}
             <div className="flex flex-wrap items-center gap-4 pt-4">
-              
+
               {/* Book Your Seat Button */}
               {onBookClick ? (
                 <button
@@ -120,10 +120,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onBookClick }) => {
               priority
               className="object-cover object-center"
             />
-            
+
             {/* Left Gradient Overlay to create smooth fade effect into beige background */}
             <div className="absolute inset-0 bg-gradient-to-r from-[#F8F6F0] via-[#F8F6F0]/60 to-transparent w-full lg:w-2/3 pointer-events-none" />
-            
+
             {/* Ambient lighting soft glow effect */}
             <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full font-medium tracking-wide border border-white/20">
               📍 Keishampat Keisham Leikai

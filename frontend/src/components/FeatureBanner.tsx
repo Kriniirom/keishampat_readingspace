@@ -14,7 +14,7 @@ export const FeatureBanner: React.FC = () => {
   const features = [
     {
       icon: Armchair,
-      title: '19 Dedicated Seats',
+      title: '18 Dedicated Seats',
       description: 'Individual study spaces for maximum concentration.',
     },
     {
@@ -44,9 +44,8 @@ export const FeatureBanner: React.FC = () => {
             return (
               <div
                 key={idx}
-                className={`flex items-start space-x-4 ${
-                  idx !== 0 ? 'pt-6 lg:pt-0 lg:pl-6' : ''
-                }`}
+                className={`flex items-start space-x-4 ${idx !== 0 ? 'pt-6 lg:pt-0 lg:pl-6' : ''
+                  }`}
               >
                 {/* Dark Forest Green Circle Badge Icon */}
                 <div className="w-14 h-14 bg-[#113826] rounded-full flex items-center justify-center text-white flex-shrink-0 shadow-md">

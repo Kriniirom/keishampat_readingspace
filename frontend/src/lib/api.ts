@@ -134,51 +134,59 @@ export const fetchSeats = async (): Promise<{ seats: Seat[]; totalSeats: number;
     console.warn('Google Sheets API GET notice, using local optimistic cache:', error.message);
   }
 
-  // Combine Google Sheet rows with local submitted bookings
-  const localBookings = getLocalBookings();
-  const allBookings = [...localBookings, ...sheetBookings];
+  // Combine Google Sheet rows with local submitted bookings (Google Sheet is source of truth)
+  const localBookings = getLocalBookings().filter((lb: any) => {
+    return !sheetBookings.some((sb: any) => {
+      const matchId = sb.bookingId && lb.bookingId && String(sb.bookingId).trim() === String(lb.bookingId).trim();
+      const matchSeat = sb.seat && lb.seat && String(sb.seat).trim() === String(lb.seat).trim();
+      return matchId || matchSeat;
+    });
+  });
+  const allBookings = [...sheetBookings, ...localBookings];
 
   const todayDate = new Date();
   todayDate.setHours(0, 0, 0, 0);
 
   seats.forEach((seat) => {
-    // Find row matching this exact seat ID using exact numeric parsing
-    const match = allBookings.find((b: any) => {
+    // Find all rows matching this seat ID
+    const seatBookings = allBookings.filter((b: any) => {
       if (typeof b.seatId === 'number' && b.seatId === seat.id) {
         return true;
       }
-
       const rawSeat = String(b.seat || b.seatId || b.Seat || '').trim();
-      // Extract only digits from strings like "Seat #01", "Seat 1", "#01", "Seat #10"
       const digits = rawSeat.replace(/\D/g, '');
-      if (digits.length > 0) {
-        return parseInt(digits, 10) === seat.id; // Exact numeric comparison!
-      }
-      return false;
+      return digits.length > 0 && parseInt(digits, 10) === seat.id;
     });
 
-    if (match) {
-      const statusStr = String(match.status || match.Status || '').toLowerCase();
+    // Check if any booking row for this seat is currently active
+    for (const match of seatBookings) {
+      const statusStr = String(match.status || match.Status || '').toLowerCase().trim();
       const expiryStr = String(match.expiry || match.Expiry || '').trim();
 
-      // Check if booking membership has expired
+      // If status is marked Expired, Cancelled, or Available, skip this booking
+      if (statusStr.includes('expire') || statusStr.includes('cancel') || statusStr.includes('availab')) {
+        continue;
+      }
+
+      // Check if booking membership has expired based on expiry date
       let isExpired = false;
       if (expiryStr) {
         try {
           const expDate = new Date(expiryStr);
           if (!isNaN(expDate.getTime()) && expDate < todayDate) {
-            isExpired = true; // Expiry date is in the past -> Seat becomes available again!
+            isExpired = true; // Expiry date is in the past -> Seat becomes available
           }
         } catch (e) {
           // Keep active if date parsing fails
         }
       }
 
-      // Seat is occupied if active/paid/confirmed/pending AND not expired!
+      // Seat is occupied if active/paid/confirmed/pending/comfirm AND not expired!
       const isBooked = !isExpired && (
+        statusStr.includes('confirm') ||
+        statusStr.includes('comfirm') ||
         statusStr.includes('active') ||
         statusStr.includes('paid') ||
-        statusStr.includes('confirmed') ||
         statusStr.includes('booked') ||
         statusStr.includes('pending')
       );
@@ -189,6 +197,7 @@ export const fetchSeats = async (): Promise<{ seats: Seat[]; totalSeats: number;
           name: match.name || match.Name || 'Booked Member',
           phone: match.phone || match.Phone || '',
         };
+        break; // Found active booking for this seat!
       }
     }
   });
@@ -218,8 +227,8 @@ export const bookSeatApi = async (payload: BookingPayload) => {
   const paymentMethodStr = payload.paymentMethod === 'cash'
     ? 'Cash at Counter'
     : (payload.transactionRef
-        ? `UPI Payment (UTR/ID: ${payload.transactionRef})`
-        : 'UPI Payment');
+      ? `UPI Payment (UTR/ID: ${payload.transactionRef})`
+      : 'UPI Payment');
   const initialStatus = payload.paymentMethod === 'cash' ? 'Pending' : 'Confirmed';
 
   const postBody = {
