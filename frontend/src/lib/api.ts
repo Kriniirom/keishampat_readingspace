@@ -64,27 +64,15 @@ export interface ContactPayload {
   message: string;
 }
 
-// Local cache key for optimistic real-time booking status (v3 clean)
-const LOCAL_BOOKINGS_KEY = 'keishampat_optimistic_bookings_v3';
-
-const getLocalBookings = (): any[] => {
-  if (typeof window === 'undefined') return [];
-  try {
-    const data = localStorage.getItem(LOCAL_BOOKINGS_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch (e) {
-    return [];
-  }
-};
-
-const saveLocalBooking = (booking: any) => {
+// Clear any legacy local storage keys to ensure 100% sync with Google Sheets
+const clearLegacyLocalBookings = () => {
   if (typeof window === 'undefined') return;
   try {
-    const current = getLocalBookings();
-    const updated = [booking, ...current];
-    localStorage.setItem(LOCAL_BOOKINGS_KEY, JSON.stringify(updated));
+    localStorage.removeItem('keishampat_optimistic_bookings_v3');
+    localStorage.removeItem('keishampat_local_bookings_v2');
+    localStorage.removeItem('keishampat_local_bookings');
   } catch (e) {
-    console.error('Failed to cache local booking:', e);
+    // Ignore storage errors
   }
 };
 
@@ -108,12 +96,13 @@ const create18SeatsTemplate = (): Seat[] => {
 };
 
 /**
- * Fetch current bookings from Google Apps Script Web App using GET
- * Maps Google Sheet records + recent local bookings to 18 seats:
- * - Active / Paid / Confirmed / Pending → marked as occupied/booked
- * - Available → selectable
+ * Fetch current bookings directly from Google Apps Script Web App using GET
+ * Google Sheets is the 100% Single Source of Truth for all devices!
  */
 export const fetchSeats = async (): Promise<{ seats: Seat[]; totalSeats: number; availableCount: number }> => {
+  // Wipe any stale local cache so phone & laptop match Google Sheets perfectly
+  clearLegacyLocalBookings();
+
   const seats = create18SeatsTemplate();
 
   let sheetBookings: any[] = [];
@@ -131,36 +120,16 @@ export const fetchSeats = async (): Promise<{ seats: Seat[]; totalSeats: number;
       sheetBookings = Array.isArray(result) ? result : (result.data || result.bookings || []);
     }
   } catch (error: any) {
-    console.warn('Google Sheets API GET notice, using local optimistic cache:', error.message);
+    console.warn('Google Sheets API GET notice:', error.message);
   }
 
-  // 1. Reverse so the newest/latest row in Google Sheet takes priority!
+  // Reverse so the newest/latest row in Google Sheet takes priority!
   const reversedSheetBookings = [...sheetBookings].reverse();
-
-  // 2. Clean local storage: If Google Sheet already has the record or says expired, prune local bookings
-  const localBookings = getLocalBookings().filter((localB: any) => {
-    const alreadyInSheet = sheetBookings.some((sb: any) =>
-      (sb.bookingId && sb.bookingId === localB.bookingId) ||
-      (sb.seatId && sb.seatId === localB.seatId)
-    );
-    return !alreadyInSheet;
-  });
 
   const todayDate = new Date();
   todayDate.setHours(0, 0, 0, 0);
 
   seats.forEach((seat) => {
-    // Check if there is an un-synced local booking just submitted on this device (<10 min ago)
-    const localMatch = localBookings.find((b: any) => b.seatId === seat.id);
-    if (localMatch) {
-      seat.status = 'occupied';
-      seat.reservedBy = {
-        name: localMatch.name || 'Booked Member',
-        phone: localMatch.phone || '',
-      };
-      return;
-    }
-
     // Find the MOST RECENT record for this seat in Google Sheets (scanning newest first)
     const match = reversedSheetBookings.find((b: any) => {
       if (typeof b.seatId === 'number' && b.seatId === seat.id) {
@@ -270,9 +239,6 @@ export const bookSeatApi = async (payload: BookingPayload) => {
     transactionRef: payload.transactionRef || '',
     status: initialStatus,
   };
-
-  // Optimistically save booking locally so the seat IMMEDIATELY turns OCCUPIED!
-  saveLocalBooking(postBody);
 
   try {
     // Send POST to Google Apps Script using text/plain payload to bypass CORS preflight restriction
