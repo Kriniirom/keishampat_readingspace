@@ -10,6 +10,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Phone, BookOpen, Menu, X } from 'lucide-react';
+import BrandLogo from './BrandLogo';
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
@@ -30,24 +31,8 @@ export const Header: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         
         {/* Brand Logo & Title */}
-        <Link href="/" className="flex items-center space-x-3 group">
-          {/* Green Logo Icon Square */}
-          <div className="w-11 h-11 bg-[#113826] rounded-lg flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105">
-            <div className="relative flex flex-col items-center justify-center">
-              <span className="font-bold text-xl leading-none">K</span>
-              <BookOpen className="w-4 h-4 text-emerald-300 mt-[-2px]" />
-            </div>
-          </div>
-          
-          {/* Brand Name Typography */}
-          <div className="flex flex-col">
-            <span className="text-xl font-extrabold text-[#113826] tracking-tight leading-none">
-              Keishampat
-            </span>
-            <span className="text-sm font-medium text-[#4A5550] tracking-tight mt-0.5">
-              Reading Space
-            </span>
-          </div>
+        <Link href="/" className="flex items-center group">
+          <BrandLogo size="md" theme="dark" />
         </Link>
 
         {/* Desktop Navigation Menu Links */}

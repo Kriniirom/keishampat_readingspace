@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="favBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#184e35" />
+      <stop offset="100%" stop-color="#0a2418" />
+    </linearGradient>
+    <linearGradient id="favGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCD34D" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#favBg)" stroke="#236345" stroke-width="1.5" />
+  <path d="M 12 31 C 16 29 20 29 23 31.5 L 23 17.5 C 20 15 16 15 12 17 Z" fill="#FFFFFF" />
+  <path d="M 36 31 C 32 29 28 29 25 31.5 L 25 17.5 C 28 15 32 15 36 17 Z" fill="#E5E7EB" />
+  <path d="M 23 15.5 L 25 15.5 L 25 33.5 L 24 32.5 L 23 33.5 Z" fill="url(#favGold)" />
+  <circle cx="24" cy="11.5" r="2.5" fill="url(#favGold)" />
+</svg>

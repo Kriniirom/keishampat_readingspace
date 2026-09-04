@@ -9,11 +9,24 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { MapPin, Clock, Users, IndianRupee, Calendar, Phone, BookOpen } from 'lucide-react';
+import {
+  MapPin,
+  Clock,
+  Users,
+  IndianRupee,
+  Calendar,
+  Phone,
+  BookOpen,
+  Navigation,
+  ArrowUpRight
+} from 'lucide-react';
 
 interface HeroSectionProps {
   onBookClick?: () => void;
 }
+
+// Exact Google Maps Directions link directly to Keishampat Reading Space
+const GOOGLE_MAPS_DIRECTIONS_URL = 'https://maps.app.goo.gl/U53zzf8mW8xtqVeXA?g_st=awb';
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ onBookClick }) => {
   return (
@@ -50,10 +63,22 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onBookClick }) => {
             {/* Key Information Metadata List */}
             <div className="space-y-3 pt-2">
 
-              {/* Location item */}
-              <div className="flex items-center space-x-3 text-[#2C3531]">
-                <MapPin className="w-5 h-5 text-[#113826] flex-shrink-0" />
-                <span className="font-semibold text-base sm:text-lg">Keishampat Keisham Leikai</span>
+              {/* Location item with quick directions link */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[#2C3531]">
+                <div className="flex items-center space-x-3">
+                  <MapPin className="w-5 h-5 text-[#113826] flex-shrink-0" />
+                  <span className="font-semibold text-base sm:text-lg">Keishampat Keisham Leikai</span>
+                </div>
+                <a
+                  href={GOOGLE_MAPS_DIRECTIONS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center space-x-1 text-xs font-bold text-[#113826] bg-[#EDE7DD] hover:bg-[#113826] hover:text-white border border-[#DDD6C8] px-2.5 py-1 rounded-full transition-all shadow-xs"
+                  title="View directions on Google Maps"
+                >
+                  <span>Directions</span>
+                  <ArrowUpRight className="w-3 h-3" />
+                </a>
               </div>
 
               {/* Operating Hours item */}
@@ -76,7 +101,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onBookClick }) => {
             </div>
 
             {/* CTA Action Buttons */}
-            <div className="flex flex-wrap items-center gap-4 pt-4">
+            <div className="flex flex-wrap items-center gap-3.5 pt-4">
 
               {/* Book Your Seat Button */}
               {onBookClick ? (
@@ -97,12 +122,26 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onBookClick }) => {
                 </Link>
               )}
 
+              {/* Professional Get Directions Button */}
+              <a
+                href={GOOGLE_MAPS_DIRECTIONS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center space-x-2.5 bg-white hover:bg-[#F4EFE6] border border-[#D5CFBF] hover:border-[#113826] text-[#113826] px-6 py-3.5 rounded-xl font-semibold text-base shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+                title="Open Google Maps to map turn-by-turn directions toward Keishampat Reading Space"
+              >
+                <div className="w-7 h-7 rounded-lg bg-[#113826]/10 group-hover:bg-[#113826] flex items-center justify-center transition-colors">
+                  <Navigation className="w-4 h-4 text-[#113826] group-hover:text-emerald-300 transition-all duration-300 transform group-hover:-rotate-12 group-hover:scale-110" />
+                </div>
+                <span>Get Directions</span>
+              </a>
+
               {/* WhatsApp Us Button */}
               <a
                 href="https://wa.me/919863429955?text=Hello%20Keishampat%20Reading%20Space%2C%20I%20would%20like%20to%20know%20more%20about%20seat%20availability."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center space-x-2.5 bg-white border border-[#D5CFBF] hover:border-[#113826] text-[#1E2421] px-7 py-3.5 rounded-xl font-semibold text-base shadow-sm hover:shadow-md transition-all active:scale-95"
+                className="inline-flex items-center space-x-2.5 bg-white border border-[#D5CFBF] hover:border-[#113826] text-[#1E2421] px-6 py-3.5 rounded-xl font-semibold text-base shadow-sm hover:shadow-md transition-all active:scale-95"
               >
                 <Phone className="w-5 h-5 text-[#113826]" />
                 <span>WhatsApp Us</span>
@@ -124,10 +163,18 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onBookClick }) => {
             {/* Left Gradient Overlay to create smooth fade effect into beige background */}
             <div className="absolute inset-0 bg-gradient-to-r from-[#F8F6F0] via-[#F8F6F0]/60 to-transparent w-full lg:w-2/3 pointer-events-none" />
 
-            {/* Ambient lighting soft glow effect */}
-            <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full font-medium tracking-wide border border-white/20">
-              📍 Keishampat Keisham Leikai
-            </div>
+            {/* Ambient lighting soft glow effect / Interactive directions badge */}
+            <a
+              href={GOOGLE_MAPS_DIRECTIONS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute top-4 right-4 bg-black/50 hover:bg-[#113826] backdrop-blur-md text-white text-xs px-3.5 py-1.5 rounded-full font-medium tracking-wide border border-white/20 hover:border-emerald-400 flex items-center space-x-1.5 transition-all shadow-lg group cursor-pointer"
+              title="Click to map directions to Keishampat Reading Space"
+            >
+              <Navigation className="w-3 h-3 text-emerald-300 group-hover:-rotate-12 transition-transform" />
+              <span>Keishampat Keisham Leikai</span>
+              <ArrowUpRight className="w-3 h-3 text-white/70 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </a>
           </div>
 
         </div>

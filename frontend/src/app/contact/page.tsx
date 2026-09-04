@@ -84,7 +84,16 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h4 className="font-bold text-[#113826]">Address Location</h4>
-                  <p className="text-sm text-[#55625B]">Keishampat Keisham Leikai, Imphal, Manipur</p>
+                  <a
+                    href="https://maps.app.goo.gl/U53zzf8mW8xtqVeXA?g_st=awb"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-[#55625B] hover:text-[#113826] hover:underline flex items-center gap-1.5 mt-0.5"
+                    title="Get Directions on Google Maps"
+                  >
+                    <span>Keishampat Keisham Leikai, Imphal, Manipur</span>
+                    <span className="text-xs bg-emerald-50 text-[#113826] font-semibold px-2 py-0.5 rounded-full border border-emerald-200">Directions</span>
+                  </a>
                 </div>
               </div>
 

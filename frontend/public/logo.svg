@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" className="w-full h-full">
+  <defs>
+    <linearGradient id="krsBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#184e35" />
+      <stop offset="100%" stop-color="#0a2418" />
+    </linearGradient>
+    <linearGradient id="krsGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCD34D" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+    <linearGradient id="krsEmerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6EE7B7" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded squircle with subtle border -->
+  <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#krsBg)" stroke="#236345" stroke-width="1.5" />
+
+  <!-- Inner ambient glow -->
+  <circle cx="24" cy="20" r="16" fill="#10B981" opacity="0.12" filter="blur(4px)" />
+
+  <!-- Stylized Open Book Symbol -->
+  <!-- Left page -->
+  <path
+    d="M 12 31 C 16 29 20 29 23 31.5 L 23 17.5 C 20 15 16 15 12 17 Z"
+    fill="#FFFFFF"
+    fill-opacity="0.95"
+  />
+  <path
+    d="M 12 31 C 16 29 20 29 23 31.5"
+    stroke="#D1D5DB"
+    stroke-width="1.2"
+    stroke-linecap="round"
+  />
+
+  <!-- Right page -->
+  <path
+    d="M 36 31 C 32 29 28 29 25 31.5 L 25 17.5 C 28 15 32 15 36 17 Z"
+    fill="#F3F4F6"
+    fill-opacity="0.95"
+  />
+  <path
+    d="M 36 31 C 32 29 28 29 25 31.5"
+    stroke="#D1D5DB"
+    stroke-width="1.2"
+    stroke-linecap="round"
+  />
+
+  <!-- Subtle page lines left -->
+  <line x1="15" y1="21" x2="20" y2="20" stroke="#113826" stroke-width="1" stroke-linecap="round" opacity="0.3" />
+  <line x1="15" y1="24.5" x2="20" y2="23.5" stroke="#113826" stroke-width="1" stroke-linecap="round" opacity="0.3" />
+  <line x1="15" y1="28" x2="19" y2="27" stroke="#113826" stroke-width="1" stroke-linecap="round" opacity="0.3" />
+
+  <!-- Subtle page lines right -->
+  <line x1="28" y1="20" x2="33" y2="21" stroke="#113826" stroke-width="1" stroke-linecap="round" opacity="0.3" />
+  <line x1="28" y1="23.5" x2="33" y2="24.5" stroke="#113826" stroke-width="1" stroke-linecap="round" opacity="0.3" />
+  <line x1="29" y1="27" x2="33" y2="28" stroke="#113826" stroke-width="1" stroke-linecap="round" opacity="0.3" />
+
+  <!-- Center Golden Bookmark Ribbon hanging down -->
+  <path
+    d="M 23 15.5 L 25 15.5 L 25 33.5 L 24 32.5 L 23 33.5 Z"
+    fill="url(#krsGold)"
+  />
+
+  <!-- Study Beacon / Knowledge Spark above center spine -->
+  <circle cx="24" cy="11.5" r="2.2" fill="url(#krsGold)" />
+  <path
+    d="M 24 7.5 L 24 8.5 M 24 14.5 L 24 15.5 M 20.5 11.5 L 21.5 11.5 M 26.5 11.5 L 27.5 11.5"
+    stroke="url(#krsGold)"
+    stroke-width="1.2"
+    stroke-linecap="round"
+  />
+</svg>

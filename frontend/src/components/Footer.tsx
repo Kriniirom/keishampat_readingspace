@@ -9,6 +9,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { BookOpen, MapPin, Clock, Phone, Mail, Heart } from 'lucide-react';
+import BrandLogo from './BrandLogo';
 
 export const Footer: React.FC = () => {
   return (
@@ -18,19 +19,9 @@ export const Footer: React.FC = () => {
           
           {/* Brand Info Column */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-emerald-700 rounded-lg flex items-center justify-center text-white">
-                <span className="font-bold text-lg leading-none">K</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-bold tracking-tight leading-none text-white">
-                  Keishampat
-                </span>
-                <span className="text-xs font-medium text-emerald-300 tracking-tight mt-0.5">
-                  Reading Space
-                </span>
-              </div>
-            </div>
+            <Link href="/" className="inline-block group">
+              <BrandLogo size="md" theme="light" />
+            </Link>
             <p className="text-sm text-emerald-100/80 leading-relaxed">
               A peaceful and productive environment designed for serious students preparing for competitive exams, board tests, and academic excellence.
             </p>
@@ -72,10 +63,16 @@ export const Footer: React.FC = () => {
               Opening Hours & Address
             </h4>
             <div className="space-y-2.5 text-sm text-emerald-100/80">
-              <div className="flex items-start space-x-3">
-                <MapPin className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                <span>Keishampat Keisham Leikai, Imphal</span>
-              </div>
+              <a
+                href="https://maps.app.goo.gl/U53zzf8mW8xtqVeXA?g_st=awb"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start space-x-3 hover:text-emerald-300 transition-colors group"
+                title="View on Google Maps"
+              >
+                <MapPin className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                <span className="underline decoration-emerald-500/40 hover:decoration-emerald-300">Keishampat Keisham Leikai, Imphal</span>
+              </a>
               <div className="flex items-center space-x-3">
                 <Clock className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                 <span>5:00 AM – 11:00 PM (Everyday)</span>
