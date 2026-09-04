@@ -498,7 +498,7 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
           <span>•</span>
           <span>💡 Personal Lamp</span>
           <span>•</span>
-          <span>❄️ AC & Fan Cooling</span>
+          <span>Fan Cooling</span>
         </div>
       </div>
     </div>

@@ -23,5 +23,6 @@ yarn-error.log*
 # IDE & OS files
 .DS_Store
 *.pem
+*.tsbuildinfo
 .vscode/
 .idea/

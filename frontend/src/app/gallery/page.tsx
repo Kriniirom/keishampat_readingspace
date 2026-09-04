@@ -13,28 +13,34 @@ import { Camera, Calendar, Eye } from 'lucide-react';
 export default function GalleryPage() {
   const photos = [
     {
-      src: '/images/hero-bg.jpg',
-      title: 'Study Desk Cubicles Row',
+      src: '/images/reading-hall-cubicles.jpg',
+      title: 'Study Cubicles Row (Desks #01–#06)',
       category: 'Main Reading Hall',
-      desc: '19 individual wooden study desks with ergonomic seating and warm overhead lighting.',
+      desc: 'Private individual cubicles with tall white partition dividers, personal task lighting, and ergonomic study chairs.',
     },
     {
-      src: '/images/desk-closeup.jpg',
-      title: 'Individual Workspace Setup',
+      src: '/images/student-reading.jpg',
+      title: 'Deep Focus Study Session',
+      category: 'Quiet Study Zone',
+      desc: 'An undisturbed, peaceful environment designed specifically for competitive exam aspirants and serious readers.',
+    },
+    {
+      src: '/images/desk-setup.jpg',
+      title: 'Personal Cubicle Workspace Setup',
       category: 'Desk Amenities',
-      desc: 'Each cubicle desk features dedicated power outlets, personal LED lamps, and ample surface space.',
+      desc: 'Each desk features dedicated power sockets, personal overhead LED spotlight, and ample space for books and laptop.',
     },
     {
-      src: '/images/hero-bg.jpg',
-      title: 'Motivation Walls',
-      category: 'Study Ambience',
-      desc: 'Clean white interior walls featuring inspirational study quotes: "DISCIPLINE TODAY SUCCESS TOMORROW".',
+      src: '/images/rooftop-terrace.jpg',
+      title: 'Open-Air Rooftop Relaxation Terrace',
+      category: 'Outdoor Break Zone',
+      desc: 'Refreshing rooftop area with wooden benches, green plants, and panoramic views of the city hills for study breaks.',
     },
     {
-      src: '/images/desk-closeup.jpg',
-      title: 'Quiet Study Environment',
-      category: 'Focus Zone',
-      desc: 'Undisturbed environment tailored for serious aspirants preparing for competitive examinations.',
+      src: '/images/interior-decor.jpg',
+      title: 'Aesthetic Staircase & Greenery',
+      category: 'Interior Ambience',
+      desc: 'Clean, peaceful corners decorated with calming wall art and natural air-purifying snake plants.',
     },
   ];
 
