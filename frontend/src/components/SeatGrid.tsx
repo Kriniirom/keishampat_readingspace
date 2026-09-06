@@ -17,7 +17,7 @@ interface SeatGridProps {
 }
 
 export const SeatGrid: React.FC<SeatGridProps> = ({ seats, selectedSeatId, onSelectSeat }) => {
-  const rawSeats = seats && seats.length > 0 ? seats : Array.from({ length: 18 }, (_, index) => {
+  const rawSeats: Seat[] = seats && seats.length > 0 ? seats : Array.from({ length: 18 }, (_, index) => {
     const id = index + 1;
     return {
       id,
@@ -27,6 +27,11 @@ export const SeatGrid: React.FC<SeatGridProps> = ({ seats, selectedSeatId, onSel
       pricePerMonth: 900,
       hasPowerSocket: true,
       hasDeskLamp: true,
+      shiftsOccupied: {
+        morning: false,
+        evening: false,
+        fullDay: false,
+      },
     };
   });
   const activeSeats = rawSeats.filter((seat) => seat.id <= 18);
@@ -83,18 +88,38 @@ export const SeatGrid: React.FC<SeatGridProps> = ({ seats, selectedSeatId, onSel
                   <Lock className="w-3.5 h-3.5 text-amber-600" />
                 ) : isSelected ? (
                   <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                ) : seat.shiftsOccupied?.morning && !seat.shiftsOccupied?.evening ? (
+                  <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200" title="Morning occupied, Evening shift available">
+                    Eve Free
+                  </span>
+                ) : seat.shiftsOccupied?.evening && !seat.shiftsOccupied?.morning ? (
+                  <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200" title="Evening occupied, Morning shift available">
+                    Morn Free
+                  </span>
                 ) : null}
               </div>
 
               {/* Study Desk Icon & Label */}
               <div className="my-1.5 flex flex-col items-center">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                  isSelected ? 'bg-emerald-800 text-white' : isOccupied ? 'bg-amber-200/60 text-amber-800' : 'bg-[#EAE4D8] text-[#113826]'
+                  isSelected
+                    ? 'bg-emerald-800 text-white'
+                    : isOccupied
+                    ? 'bg-amber-200/60 text-amber-800'
+                    : (seat.shiftsOccupied?.morning || seat.shiftsOccupied?.evening)
+                    ? 'bg-amber-100 text-[#113826] border border-amber-300'
+                    : 'bg-[#EAE4D8] text-[#113826]'
                 }`}>
                   <span className="font-extrabold text-xs">DESK</span>
                 </div>
                 <span className="text-xs font-semibold mt-1">
-                  {isOccupied ? 'Occupied' : 'Seat ' + seat.id}
+                  {isOccupied
+                    ? 'Occupied'
+                    : seat.shiftsOccupied?.morning && !seat.shiftsOccupied?.evening
+                    ? 'Eve Available'
+                    : seat.shiftsOccupied?.evening && !seat.shiftsOccupied?.morning
+                    ? 'Morn Available'
+                    : 'Seat ' + seat.id}
                 </span>
               </div>
 

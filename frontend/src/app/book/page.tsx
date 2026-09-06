@@ -82,7 +82,7 @@ export default function BookPage() {
                   }`}
               >
                 <Map className="w-3.5 h-3.5" />
-                <span>2D Room Layout</span>
+                <span>2D Layout</span>
               </button>
               <button
                 onClick={() => setViewMode('grid')}

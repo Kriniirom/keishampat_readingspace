@@ -8,6 +8,12 @@
 // Google Apps Script Web App Endpoint URL
 export const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqNNYRPKLj8nW2yqoegCWULRrfnq9HY8Zvu35CxO0I_rqQtA94-leNwR6CdZAgbewCCg/exec';
 
+export interface SeatShifts {
+  morning: boolean;
+  evening: boolean;
+  fullDay: boolean;
+}
+
 /**
  * Seat interface defining individual study cubicle properties (18 total seats)
  */
@@ -20,6 +26,7 @@ export interface Seat {
   hasPowerSocket: boolean;
   hasDeskLamp: boolean;
   reservedBy?: { name: string; phone: string } | null;
+  shiftsOccupied?: SeatShifts;
 }
 
 /**
@@ -27,6 +34,8 @@ export interface Seat {
  */
 export interface BookingPayload {
   seatId: number;
+  shift?: 'morning' | 'evening' | 'fullday';
+  shiftLabel?: string;
   fullName: string;
   phone: string;
   address?: string;
@@ -91,6 +100,11 @@ const create18SeatsTemplate = (): Seat[] => {
       hasPowerSocket: true,
       hasDeskLamp: true,
       reservedBy: null,
+      shiftsOccupied: {
+        morning: false,
+        evening: false,
+        fullDay: false,
+      },
     };
   });
 };
@@ -130,8 +144,8 @@ export const fetchSeats = async (): Promise<{ seats: Seat[]; totalSeats: number;
   todayDate.setHours(0, 0, 0, 0);
 
   seats.forEach((seat) => {
-    // Find the MOST RECENT record for this seat in Google Sheets (scanning newest first)
-    const match = reversedSheetBookings.find((b: any) => {
+    // Find ALL active bookings for this specific seat
+    const seatBookings = reversedSheetBookings.filter((b: any) => {
       if (typeof b.seatId === 'number' && b.seatId === seat.id) {
         return true;
       }
@@ -144,7 +158,11 @@ export const fetchSeats = async (): Promise<{ seats: Seat[]; totalSeats: number;
       return false;
     });
 
-    if (match) {
+    let isMorningOccupied = false;
+    let isEveningOccupied = false;
+    let activeReservedBy: { name: string; phone: string } | null = null;
+
+    for (const match of seatBookings) {
       const statusStr = String(match.status || match.Status || '').trim().toLowerCase();
       const expiryStr = String(match.expiry || match.Expiry || '').trim();
 
@@ -171,7 +189,7 @@ export const fetchSeats = async (): Promise<{ seats: Seat[]; totalSeats: number;
         }
       }
 
-      // Seat is occupied ONLY if not expired and status is confirmed/active/paid/pending
+      // Record is an active booking if not freed, not expired, and has active status
       const isBooked = !isExplicitlyAvailable && !isDateExpired && (
         statusStr.includes('confirm') ||
         statusStr.includes('comfirm') || // Handles common typo in sheet
@@ -183,16 +201,42 @@ export const fetchSeats = async (): Promise<{ seats: Seat[]; totalSeats: number;
       );
 
       if (isBooked) {
-        seat.status = 'occupied';
-        seat.reservedBy = {
-          name: match.name || match.Name || 'Booked Member',
-          phone: match.phone || match.Phone || '',
-        };
-      } else {
-        seat.status = 'available';
-        seat.reservedBy = null;
+        if (!activeReservedBy) {
+          activeReservedBy = {
+            name: match.name || match.Name || 'Booked Member',
+            phone: match.phone || match.Phone || '',
+          };
+        }
+
+        const rawSeat = String(match.seat || match.seatId || match.Seat || '').toLowerCase();
+        const shiftField = String(match.shift || match.Shift || '').toLowerCase();
+        const combined = `${rawSeat} ${shiftField}`;
+
+        const isMorning = combined.includes('morn'); // catches morning, mornign, (morning)
+        const isEvening = combined.includes('eve');  // catches evening, (evening)
+
+        if (isMorning && !isEvening) {
+          isMorningOccupied = true;
+        } else if (isEvening && !isMorning) {
+          isEveningOccupied = true;
+        } else {
+          // If shift is not specified (e.g. plain "Seat #01") or explicitly full day:
+          // it occupies both morning and evening shifts!
+          isMorningOccupied = true;
+          isEveningOccupied = true;
+        }
       }
     }
+
+    // A seat is fully occupied only if BOTH shifts are taken (or full day reserved)
+    const isFullyOccupied = isMorningOccupied && isEveningOccupied;
+    seat.status = isFullyOccupied ? 'occupied' : 'available';
+    seat.reservedBy = activeReservedBy;
+    seat.shiftsOccupied = {
+      morning: isMorningOccupied,
+      evening: isEveningOccupied,
+      fullDay: isFullyOccupied || isMorningOccupied || isEveningOccupied,
+    };
   });
 
   const activeSeats = seats.filter((s) => s.id <= 18);
@@ -206,7 +250,8 @@ export const fetchSeats = async (): Promise<{ seats: Seat[]; totalSeats: number;
  */
 export const bookSeatApi = async (payload: BookingPayload) => {
   const duration = payload.durationMonths || 1;
-  const totalAmount = payload.totalAmount || (900 * duration);
+  const defaultMonthly = (payload.shift === 'morning' || payload.shift === 'evening') ? 600 : 900;
+  const totalAmount = payload.totalAmount || (defaultMonthly * duration);
 
   // Calculate Expiry Date (Start Date + duration months)
   const start = new Date(payload.startDate);
@@ -216,7 +261,23 @@ export const bookSeatApi = async (payload: BookingPayload) => {
 
   // Generate unique Booking ID (e.g., KRS-8492)
   const bookingId = `KRS-${Math.floor(1000 + Math.random() * 9000)}`;
-  const seatName = `Seat #${payload.seatId.toString().padStart(2, '0')}`;
+  
+  // Format Seat string according to requested bracket format: Seat #01(morning)
+  const padSeatId = payload.seatId.toString().padStart(2, '0');
+  let seatName = `Seat #${padSeatId}`;
+  let shiftLabel = 'Full Day (5:00 AM – 10:00 PM)';
+
+  if (payload.shift === 'morning') {
+    seatName = `Seat #${padSeatId}(morning)`;
+    shiftLabel = 'Morning Shift (5:00 AM – 1:00 PM)';
+  } else if (payload.shift === 'evening') {
+    seatName = `Seat #${padSeatId}(evening)`;
+    shiftLabel = 'Evening Shift (1:00 PM – 10:00 PM)';
+  } else if (payload.shift === 'fullday') {
+    seatName = `Seat #${padSeatId}(full day)`;
+    shiftLabel = 'Full Day (5:00 AM – 10:00 PM)';
+  }
+
   const paymentMethodStr = payload.paymentMethod === 'cash'
     ? 'Cash at Counter'
     : (payload.transactionRef
@@ -232,6 +293,7 @@ export const bookSeatApi = async (payload: BookingPayload) => {
     address: payload.address || 'N/A',
     seat: seatName,
     seatId: payload.seatId,
+    shift: payload.shiftLabel || shiftLabel,
     startDate: payload.startDate,
     expiry: expiryDate,
     amount: `₹${totalAmount}`,

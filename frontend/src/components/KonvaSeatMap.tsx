@@ -69,6 +69,11 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
       pricePerMonth: 900,
       hasPowerSocket: true,
       hasDeskLamp: true,
+      shiftsOccupied: {
+        morning: false,
+        evening: false,
+        fullDay: false,
+      },
     };
   });
   const activeSeats = rawSeats.filter((seat) => seat.id <= 18);
@@ -125,6 +130,15 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
         chairFill: '#34D399',
         glow: '#10B981',
         shadowBlur: 16,
+      };
+    }
+    if (seat.shiftsOccupied?.morning || seat.shiftsOccupied?.evening) {
+      return {
+        bg: '#FEF9C3',
+        border: '#10B981',
+        chairFill: '#059669',
+        glow: '#10B981',
+        shadowBlur: 8,
       };
     }
     return {
@@ -467,7 +481,15 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
                 <Text
                   x={-68}
                   y={-14}
-                  text={`${(hoveredSeat?.status || 'available').toUpperCase()} • ₹900/mo`}
+                  text={
+                    hoveredSeat?.status === 'occupied'
+                      ? 'OCCUPIED • ₹900/mo'
+                      : hoveredSeat?.shiftsOccupied?.morning && !hoveredSeat?.shiftsOccupied?.evening
+                      ? 'EVE AVAILABLE • ₹900/mo'
+                      : hoveredSeat?.shiftsOccupied?.evening && !hoveredSeat?.shiftsOccupied?.morning
+                      ? 'MORN AVAILABLE • ₹900/mo'
+                      : 'AVAILABLE • ₹900/mo'
+                  }
                   fontSize={11}
                   fontStyle="bold"
                   fill={hoveredSeat?.status === 'occupied' ? '#FBBF24' : '#34D399'}

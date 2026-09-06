@@ -6,7 +6,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Seat, bookSeatApi } from '../lib/api';
 import {
   X,
@@ -22,7 +22,12 @@ import {
   MessageSquare,
   ShieldCheck,
   Clock,
+  Sun,
+  Moon,
+  ChevronDown,
 } from 'lucide-react';
+
+type ShiftType = 'morning' | 'evening' | 'fullday';
 
 interface BookingModalProps {
   seat: Seat | null;
@@ -32,6 +37,7 @@ interface BookingModalProps {
 }
 
 export const BookingModal: React.FC<BookingModalProps> = ({ seat, isOpen, onClose, onSuccess }) => {
+  const [shift, setShift] = useState<ShiftType>('morning');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -46,9 +52,44 @@ export const BookingModal: React.FC<BookingModalProps> = ({ seat, isOpen, onClos
   const [successMessage, setSuccessMessage] = useState('');
   const [createdBookingId, setCreatedBookingId] = useState('');
 
+  const isMorningOccupied = !!seat?.shiftsOccupied?.morning;
+  const isEveningOccupied = !!seat?.shiftsOccupied?.evening;
+  const isFullDayOccupied = isMorningOccupied || isEveningOccupied;
+
+  // Auto-detect and make available the remaining shift if one is occupied
+  useEffect(() => {
+    if (seat) {
+      const mornOcc = !!seat.shiftsOccupied?.morning;
+      const eveOcc = !!seat.shiftsOccupied?.evening;
+
+      if (mornOcc && !eveOcc) {
+        setShift('evening');
+      } else if (eveOcc && !mornOcc) {
+        setShift('morning');
+      } else if (!mornOcc && !eveOcc) {
+        setShift('morning');
+      } else {
+        setShift('evening');
+      }
+    }
+  }, [seat]);
+
   if (!isOpen || !seat) return null;
 
-  const monthlyPrice = seat.pricePerMonth || 900;
+  const shiftLabelMap: Record<ShiftType, string> = {
+    morning: 'Morning Shift (5:00 AM – 1:00 PM)',
+    evening: 'Evening Shift (1:00 PM – 10:00 PM)',
+    fullday: 'Full Day (5:00 AM – 10:00 PM)',
+  };
+
+  const shiftShortName: Record<ShiftType, string> = {
+    morning: 'Morning (5am-1pm)',
+    evening: 'Evening (1pm-10pm)',
+    fullday: 'Full Day',
+  };
+
+  const isHalfDayShift = shift === 'morning' || shift === 'evening';
+  const monthlyPrice = isHalfDayShift ? 600 : (seat.pricePerMonth || 900);
   const totalAmount = monthlyPrice * durationMonths;
 
   const upiDetailsStr = paymentMethod === 'upi' && transactionRef.trim()
@@ -56,7 +97,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ seat, isOpen, onClos
     : '';
 
   const whatsappMessage = encodeURIComponent(
-    `Hello Keishampat Reading Space, I am submitting a ${paymentMethod === 'cash' ? 'Cash' : 'UPI'} Payment of ₹${totalAmount} for ${seat.seatNumber} (${durationMonths} Month${durationMonths > 1 ? 's' : ''}, Booking ID: ${createdBookingId || 'Pending'}${upiDetailsStr}, Student: ${fullName || 'Student'}, Phone: ${phone || 'N/A'}, Address: ${address || 'N/A'}). Please verify my payment for instant seat approval.`
+    `Hello Keishampat Reading Space, I am submitting a ${paymentMethod === 'cash' ? 'Cash' : 'UPI'} Payment of ₹${totalAmount} for ${seat.seatNumber} [${shiftLabelMap[shift]}] (${durationMonths} Month${durationMonths > 1 ? 's' : ''}, Booking ID: ${createdBookingId || 'Pending'}${upiDetailsStr}, Student: ${fullName || 'Student'}, Phone: ${phone || 'N/A'}, Address: ${address || 'N/A'}). Please verify my payment for instant seat approval.`
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,6 +105,20 @@ export const BookingModal: React.FC<BookingModalProps> = ({ seat, isOpen, onClos
     setErrorMessage('');
     setSuccessMessage('');
     setCreatedBookingId('');
+
+    // Guard against booking an occupied shift
+    if (shift === 'morning' && isMorningOccupied) {
+      setErrorMessage('Morning shift is already occupied for this desk. Please select the Evening shift.');
+      return;
+    }
+    if (shift === 'evening' && isEveningOccupied) {
+      setErrorMessage('Evening shift is already occupied for this desk. Please select the Morning shift.');
+      return;
+    }
+    if (shift === 'fullday' && isFullDayOccupied) {
+      setErrorMessage('Full Day is unavailable because a shift on this desk is already reserved.');
+      return;
+    }
 
     if (!fullName.trim() || !phone.trim() || !startDate) {
       setErrorMessage('Please fill in your full name, phone number, and preferred start date.');
@@ -79,13 +134,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({ seat, isOpen, onClos
       setLoading(true);
       const res = await bookSeatApi({
         seatId: seat.id,
+        shift,
+        shiftLabel: shiftLabelMap[shift],
         fullName: fullName.trim(),
         phone: phone.trim(),
         address: address.trim(),
         startDate,
         durationMonths,
         totalAmount,
-        planType: `${durationMonths} Month${durationMonths > 1 ? 's' : ''} Access (₹${totalAmount})`,
+        planType: `${shiftShortName[shift]} - ${durationMonths} Month${durationMonths > 1 ? 's' : ''} Access (₹${totalAmount})`,
         paymentMethod,
         transactionRef: transactionRef.trim(),
         notes: notes.trim(),
@@ -137,6 +194,9 @@ export const BookingModal: React.FC<BookingModalProps> = ({ seat, isOpen, onClos
               <div>
                 <span className="text-[10px] sm:text-xs font-semibold text-[#5C6862] block">Selected Desk</span>
                 <span className="font-bold text-[#113826]">{seat.seatNumber} ({seat.type})</span>
+                <span className="inline-block mt-0.5 text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
+                  {shiftLabelMap[shift]}
+                </span>
               </div>
               <div className="text-right">
                 <span className="text-[10px] sm:text-xs font-semibold text-[#5C6862] block">
@@ -144,6 +204,86 @@ export const BookingModal: React.FC<BookingModalProps> = ({ seat, isOpen, onClos
                 </span>
                 <span className="font-extrabold text-base sm:text-lg text-[#113826]">₹{totalAmount}</span>
               </div>
+            </div>
+
+            {/* Shift Selection Section */}
+            <div className="space-y-1.5 bg-white p-3 rounded-xl border border-[#E5DFD3] shadow-sm">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] sm:text-xs font-bold text-[#2C3531] uppercase tracking-wider flex items-center space-x-1.5">
+                  <Clock className="w-3.5 h-3.5 text-[#113826]" />
+                  <span>Select Study Shift *</span>
+                </label>
+                {isMorningOccupied && !isEveningOccupied && (
+                  <span className="text-[10px] font-extrabold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">
+                    Morning Booked · Evening Available
+                  </span>
+                )}
+                {isEveningOccupied && !isMorningOccupied && (
+                  <span className="text-[10px] font-extrabold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">
+                    Evening Booked · Morning Available
+                  </span>
+                )}
+                {!isMorningOccupied && !isEveningOccupied && (
+                  <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+                    All Shifts Available
+                  </span>
+                )}
+              </div>
+
+              {/* Shift Dropdown Select */}
+              <div className="relative">
+                <div className="absolute left-3 top-2.5 sm:top-3 pointer-events-none">
+                  {shift === 'morning' ? (
+                    <Sun className="w-4 h-4 text-amber-600" />
+                  ) : shift === 'evening' ? (
+                    <Moon className="w-4 h-4 text-indigo-600" />
+                  ) : (
+                    <Clock className="w-4 h-4 text-emerald-700" />
+                  )}
+                </div>
+
+                <select
+                  value={shift}
+                  onChange={(e) => setShift(e.target.value as ShiftType)}
+                  className="w-full pl-9 pr-8 py-2 sm:py-2.5 rounded-xl border border-[#DCD5C8] focus:border-[#113826] focus:ring-2 focus:ring-[#113826]/20 bg-white text-xs sm:text-sm font-bold text-[#113826] outline-none transition-all appearance-none cursor-pointer"
+                >
+                  <option value="morning" disabled={isMorningOccupied}>
+                    🌅 Morning Shift: 5:00 AM – 1:00 PM (₹600/mo) {isMorningOccupied ? '— [Occupied]' : '— [Available]'}
+                  </option>
+                  <option value="evening" disabled={isEveningOccupied}>
+                    🌇 Evening Shift: 1:00 PM – 10:00 PM (₹600/mo) {isEveningOccupied ? '— [Occupied]' : '— [Available]'}
+                  </option>
+                  <option value="fullday" disabled={isFullDayOccupied}>
+                    🌟 Full Day: 5:00 AM – 10:00 PM (₹900/mo) {isFullDayOccupied ? '— [Unavailable]' : '— [Available]'}
+                  </option>
+                </select>
+
+                <div className="absolute right-3 top-3 pointer-events-none text-[#6B7771]">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </div>
+
+              {/* Dynamic Notification if Morning is occupied */}
+              {isMorningOccupied && !isEveningOccupied && (
+                <div className="p-2 sm:p-2.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-[11px] sm:text-xs flex items-start space-x-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <strong>Morning Shift (5:00 AM – 1:00 PM) is occupied</strong> for this seat.
+                    The <strong>Evening Shift (1:00 PM – 10:00 PM)</strong> is available and has been pre-selected for you!
+                  </div>
+                </div>
+              )}
+
+              {/* Dynamic Notification if Evening is occupied */}
+              {isEveningOccupied && !isMorningOccupied && (
+                <div className="p-2 sm:p-2.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-[11px] sm:text-xs flex items-start space-x-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <strong>Evening Shift (1:00 PM – 10:00 PM) is occupied</strong> for this seat.
+                    The <strong>Morning Shift (5:00 AM – 1:00 PM)</strong> is available and has been pre-selected for you!
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Success Banner */}
