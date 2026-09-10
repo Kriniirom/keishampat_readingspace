@@ -11,10 +11,12 @@
 import React, { useEffect, useState } from 'react';
 import HeroSection from '../components/HeroSection';
 import FeatureBanner from '../components/FeatureBanner';
+import KonvaWrapper from '../components/KonvaWrapper';
 import SeatGrid from '../components/SeatGrid';
 import BookingModal from '../components/BookingModal';
 import { Seat, fetchSeats, fetchPlans, MembershipPlan } from '../lib/api';
-import { CheckCircle2, ArrowRight, Sparkles, MapPin, Clock, RefreshCw } from 'lucide-react';
+import { PRICING } from '../lib/pricing';
+import { CheckCircle2, ArrowRight, Sparkles, MapPin, Clock, RefreshCw, Map, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -25,6 +27,7 @@ export default function HomePage() {
   const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'canvas' | 'grid'>('canvas');
 
   // Fetch seat status & membership plans via Axios on component load
   const loadData = async () => {
@@ -77,29 +80,66 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* 18-Seat Layout Grid Box */}
+        {/* 18-Seat Layout Card */}
         <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-[#EBE5DA] space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#F0EADF]">
             <div className="flex items-center space-x-2 text-sm font-bold text-[#113826]">
               <Sparkles className="w-4 h-4 text-emerald-600" />
               <span>Interactive 18-Seat Layout Map</span>
             </div>
 
-            <button
-              onClick={loadData}
-              className="flex items-center space-x-2 text-xs font-semibold text-[#55625B] hover:text-[#113826] bg-[#F2EDE4] px-3.5 py-2 rounded-xl border border-[#E2DBD0] transition-all hover:bg-[#EAE3D6]"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh Availability</span>
-            </button>
+            <div className="flex items-center space-x-3">
+              {/* View Mode Switcher Tabs */}
+              <div className="flex bg-[#F2EDE4] p-1 rounded-xl border border-[#E2DBD0]">
+                <button
+                  onClick={() => setViewMode('canvas')}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    viewMode === 'canvas'
+                      ? 'bg-[#113826] text-white shadow-sm'
+                      : 'text-[#55625B] hover:text-[#113826]'
+                  }`}
+                >
+                  <Map className="w-3.5 h-3.5" />
+                  <span>2D Layout</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    viewMode === 'grid'
+                      ? 'bg-[#113826] text-white shadow-sm'
+                      : 'text-[#55625B] hover:text-[#113826]'
+                  }`}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span>Grid View</span>
+                </button>
+              </div>
+
+              {/* Refresh Button */}
+              <button
+                onClick={loadData}
+                className="flex items-center space-x-2 text-xs font-semibold text-[#55625B] hover:text-[#113826] bg-[#F2EDE4] px-3.5 py-2 rounded-xl border border-[#E2DBD0] transition-all hover:bg-[#EAE3D6]"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Refresh</span>
+              </button>
+            </div>
           </div>
 
-          {/* Render 20-Seat Visual Grid */}
-          <SeatGrid
-            seats={seats}
-            selectedSeatId={selectedSeat?.id || null}
-            onSelectSeat={handleSelectSeat}
-          />
+          {/* Render 2D Layout Canvas by default or Grid View */}
+          {viewMode === 'canvas' ? (
+            <KonvaWrapper
+              seats={seats}
+              selectedSeatId={selectedSeat?.id || null}
+              onSelectSeat={handleSelectSeat}
+            />
+          ) : (
+            <SeatGrid
+              seats={seats}
+              selectedSeatId={selectedSeat?.id || null}
+              onSelectSeat={handleSelectSeat}
+            />
+          )}
         </div>
       </section>
 
@@ -113,7 +153,7 @@ export default function HomePage() {
             Transparent & Simple Membership
           </h2>
           <p className="text-[#55625B] text-base">
-            No hidden charges. Enjoy full access to your dedicated desk for just ₹900/month.
+            No hidden charges. Enjoy full access to your dedicated desk for just {PRICING.CURRENCY}{PRICING.MONTHLY_FEE}/month.
           </p>
         </div>
 
@@ -209,9 +249,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Seat Booking Modal Component (Opens ONLY when a seat is clicked on the grid) */}
+      {/* Seat Booking Modal Component (Opens when a seat is clicked on the grid) */}
       <BookingModal
         seat={selectedSeat}
+        seats={seats}
+        initialMode="new"
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={loadData}

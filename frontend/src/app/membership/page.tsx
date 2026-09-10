@@ -7,16 +7,30 @@
 
 import React, { useEffect, useState } from 'react';
 import { fetchPlans, MembershipPlan } from '../../lib/api';
+import { PRICING } from '../../lib/pricing';
 import { CheckCircle2, Calendar, HelpCircle, ShieldCheck } from 'lucide-react';
 import BookingModal from '../../components/BookingModal';
 
 export default function MembershipPage() {
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'new' | 'renew'>('new');
+  const [modalShift, setModalShift] = useState<'morning' | 'evening' | 'fullday' | 'daypass'>('fullday');
 
   useEffect(() => {
     fetchPlans().then((res) => setPlans(res));
   }, []);
+
+  const handleOpenNew = () => {
+    setModalMode('new');
+    setModalShift('fullday');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenRenew = () => {
+    setModalMode('renew');
+    setIsModalOpen(true);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
@@ -30,8 +44,24 @@ export default function MembershipPage() {
           Simple, Affordable Plans
         </h1>
         <p className="text-lg text-[#55625B]">
-          Get full 18-hour daily access to your dedicated desk starting at just ₹900/month.
+          Get full access to your dedicated desk starting at just {PRICING.CURRENCY}{PRICING.MONTHLY_FEE}/month.
         </p>
+
+        {/* Action Toggle Banner */}
+        <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+          <button
+            onClick={handleOpenNew}
+            className="px-5 py-2.5 rounded-xl bg-[#113826] hover:bg-[#0B2318] text-white font-bold text-xs sm:text-sm shadow-md transition-all active:scale-95"
+          >
+            New Student Admission ({PRICING.CURRENCY}{PRICING.MONTHLY_FEE})
+          </button>
+          <button
+            onClick={handleOpenRenew}
+            className="px-5 py-2.5 rounded-xl bg-[#EDE7DD] hover:bg-[#DDD6C8] text-[#113826] font-bold text-xs sm:text-sm border border-[#CFC5B4] shadow-sm transition-all active:scale-95"
+          >
+            Existing Student: Renew Desk ({PRICING.CURRENCY}{PRICING.MONTHLY_FEE})
+          </button>
+        </div>
       </div>
 
       {/* Pricing Cards Grid */}
@@ -71,7 +101,15 @@ export default function MembershipPage() {
 
             <div className="pt-8">
               <button
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => {
+                  setModalMode('new');
+                  if (plan.id === 'daily-pass') {
+                    setModalShift('daypass');
+                  } else {
+                    setModalShift('fullday');
+                  }
+                  setIsModalOpen(true);
+                }}
                 className={`w-full py-3.5 rounded-xl font-extrabold text-sm transition-all shadow-md ${
                   plan.popular
                     ? 'bg-[#113826] hover:bg-[#0B2318] text-white'
@@ -102,7 +140,7 @@ export default function MembershipPage() {
 
           <div className="p-5 rounded-2xl bg-[#F8F6F0] space-y-2 border border-[#E5E0D5]">
             <h4 className="font-bold text-[#113826]">Is my seat reserved for me exclusively?</h4>
-            <p className="text-[#55625B]">Yes! When you subscribe to the ₹900/month plan, your assigned seat number is dedicated solely to you for the entire duration.</p>
+            <p className="text-[#55625B]">Yes! When you subscribe to the {PRICING.CURRENCY}{PRICING.MONTHLY_FEE}/month plan, your assigned seat number is dedicated solely to you for the entire duration.</p>
           </div>
 
           <div className="p-5 rounded-2xl bg-[#F8F6F0] space-y-2 border border-[#E5E0D5]">
@@ -120,6 +158,8 @@ export default function MembershipPage() {
       <BookingModal
         seat={null}
         isOpen={isModalOpen}
+        initialMode={modalMode}
+        initialShift={modalShift}
         onClose={() => setIsModalOpen(false)}
         onSuccess={() => {}}
       />

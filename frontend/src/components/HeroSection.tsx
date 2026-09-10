@@ -20,6 +20,7 @@ import {
   Navigation,
   ArrowUpRight
 } from 'lucide-react';
+import { PRICING } from '../lib/pricing';
 
 interface HeroSectionProps {
   onBookClick?: () => void;
@@ -96,7 +97,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onBookClick }) => {
               {/* Pricing item */}
               <div className="flex items-center space-x-3 text-[#2C3531]">
                 <IndianRupee className="w-5 h-5 text-[#113826] flex-shrink-0" />
-                <span className="font-semibold text-base sm:text-lg">₹900 per month</span>
+                <span className="font-semibold text-base sm:text-lg">{PRICING.CURRENCY}{PRICING.MONTHLY_FEE} per month</span>
               </div>
             </div>
 

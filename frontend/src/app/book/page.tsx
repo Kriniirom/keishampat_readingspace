@@ -11,14 +11,17 @@ import KonvaWrapper from '../../components/KonvaWrapper';
 import SeatGrid from '../../components/SeatGrid';
 import BookingModal from '../../components/BookingModal';
 import { Seat, fetchSeats } from '../../lib/api';
-import { Sparkles, RefreshCw, Map, LayoutGrid } from 'lucide-react';
+import { PRICING } from '../../lib/pricing';
+import { Sparkles, RefreshCw, Map, LayoutGrid, Ticket } from 'lucide-react';
 
 export default function BookPage() {
   const [seats, setSeats] = useState<Seat[]>([]);
   const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'new' | 'renew'>('new');
+  const [modalShift, setModalShift] = useState<'morning' | 'evening' | 'fullday' | 'daypass'>('fullday');
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'canvas' | 'grid'>('grid');
+  const [viewMode, setViewMode] = useState<'canvas' | 'grid'>('canvas');
 
   const loadSeats = async () => {
     try {
@@ -33,15 +36,30 @@ export default function BookPage() {
   };
 
   useEffect(() => {
-    // Default to Konva Floor Plan on desktop (width >= 768), Grid View on mobile for zero lag
-    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
-      setViewMode('canvas');
-    }
     loadSeats();
   }, []);
 
   const handleSelectSeat = (seat: Seat) => {
     setSelectedSeat(seat);
+    setModalMode('new');
+    setModalShift('fullday');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenRenew = () => {
+    setModalMode('renew');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenNew = () => {
+    setModalMode('new');
+    setModalShift('fullday');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenDayPass = () => {
+    setModalMode('new');
+    setModalShift('daypass');
     setIsModalOpen(true);
   };
 
@@ -59,6 +77,33 @@ export default function BookPage() {
         <p className="text-base sm:text-lg text-[#55625B] font-medium leading-relaxed">
           Select your preferred cubicle from our interactive 2D graphical room map below to start your monthly subscription.
         </p>
+
+        {/* Quick Portal Switcher Banner */}
+        <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+          <button
+            onClick={handleOpenNew}
+            className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-[#113826] hover:bg-[#0B2318] text-white font-bold text-xs sm:text-sm shadow-md transition-all active:scale-95"
+          >
+            <Sparkles className="w-4 h-4 text-emerald-400" />
+            <span>New Student Admission ({PRICING.CURRENCY}{PRICING.MONTHLY_FEE})</span>
+          </button>
+
+          <button
+            onClick={handleOpenDayPass}
+            className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs sm:text-sm border border-amber-300 shadow-sm transition-all active:scale-95"
+          >
+            <Ticket className="w-4 h-4 text-amber-600" />
+            <span>1-Day Pass ({PRICING.CURRENCY}{PRICING.DAILY_PASS_FEE})</span>
+          </button>
+
+          <button
+            onClick={handleOpenRenew}
+            className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-[#EDE7DD] hover:bg-[#DDD6C8] text-[#113826] font-bold text-xs sm:text-sm border border-[#CFC5B4] shadow-sm transition-all active:scale-95"
+          >
+            <RefreshCw className="w-4 h-4 text-emerald-700" />
+            <span>Existing Student Renewal ({PRICING.CURRENCY}{PRICING.MONTHLY_FEE})</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Container Card */}
@@ -126,7 +171,10 @@ export default function BookPage() {
       {/* Booking Modal */}
       <BookingModal
         seat={selectedSeat}
+        seats={seats}
         isOpen={isModalOpen}
+        initialMode={modalMode}
+        initialShift={modalShift}
         onClose={() => setIsModalOpen(false)}
         onSuccess={loadSeats}
       />

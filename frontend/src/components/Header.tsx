@@ -9,12 +9,15 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Phone, BookOpen, Menu, X } from 'lucide-react';
+import { Phone, BookOpen, Menu, X, RefreshCw } from 'lucide-react';
 import BrandLogo from './BrandLogo';
+import BookingModal from './BookingModal';
+import { PRICING } from '../lib/pricing';
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
 
   // Navigation link items configuration
   const navItems = [
@@ -57,13 +60,24 @@ export const Header: React.FC = () => {
           })}
         </nav>
 
-        {/* Header Right Action CTA Button (WhatsApp Contact) */}
-        <div className="hidden sm:flex items-center">
+        {/* Header Right Action CTA Buttons */}
+        <div className="hidden sm:flex items-center space-x-3">
+          {/* Renew Desk Quick Action Button */}
+          <button
+            onClick={() => setIsRenewModalOpen(true)}
+            className="flex items-center space-x-1.5 bg-[#EDE7DD] hover:bg-[#DDD6C8] text-[#113826] px-3.5 py-2.5 rounded-xl font-extrabold text-xs border border-[#D5CCBC] transition-all shadow-sm active:scale-95"
+            title="Existing Student: Renew your desk for next month"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-emerald-800" />
+            <span>Renew Desk ({PRICING.CURRENCY}{PRICING.MONTHLY_FEE})</span>
+          </button>
+
+          {/* WhatsApp Contact Button */}
           <a
             href="https://wa.me/919863429955?text=Hello%20Keishampat%20Reading%20Space%2C%20I%20would%20like%20to%20inquire%20about%20seat%20booking."
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center space-x-2 bg-[#113826] hover:bg-[#0B2318] text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-all shadow-sm hover:shadow-md active:scale-95"
+            className="flex items-center space-x-2 bg-[#113826] hover:bg-[#0B2318] text-white px-4 py-2.5 rounded-xl font-medium text-sm transition-all shadow-sm hover:shadow-md active:scale-95"
           >
             <Phone className="w-4 h-4 text-emerald-400 fill-emerald-400" />
             <span className="tracking-wide">98634 29955</span>
@@ -71,7 +85,15 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Mobile Hamburger Toggle Button */}
-        <div className="flex md:hidden items-center">
+        <div className="flex md:hidden items-center space-x-2">
+          <button
+            onClick={() => setIsRenewModalOpen(true)}
+            className="flex items-center space-x-1 bg-[#EDE7DD] text-[#113826] px-2.5 py-1.5 rounded-lg text-xs font-bold border border-[#DDD6C8]"
+          >
+            <RefreshCw className="w-3 h-3 text-emerald-800" />
+            <span>Renew</span>
+          </button>
+
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 rounded-lg text-[#113826] hover:bg-[#EDE8DE] focus:outline-none"
@@ -99,12 +121,23 @@ export const Header: React.FC = () => {
               {item.name}
             </Link>
           ))}
-          <div className="pt-2">
+          <div className="pt-2 space-y-2">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setIsRenewModalOpen(true);
+              }}
+              className="flex items-center justify-center space-x-2 bg-[#EDE7DD] text-[#113826] w-full py-2.5 rounded-xl font-bold text-sm border border-[#DDD6C8]"
+            >
+              <RefreshCw className="w-4 h-4 text-emerald-800" />
+              <span>Renew Existing Booking ({PRICING.CURRENCY}{PRICING.MONTHLY_FEE})</span>
+            </button>
+
             <a
               href="https://wa.me/919863429955"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center space-x-2 bg-[#113826] text-white w-full py-3 rounded-xl font-medium text-sm"
+              className="flex items-center justify-center space-x-2 bg-[#113826] text-white w-full py-2.5 rounded-xl font-medium text-sm"
             >
               <Phone className="w-4 h-4 text-emerald-400" />
               <span>WhatsApp: 98634 29955</span>
@@ -112,6 +145,15 @@ export const Header: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Quick Renewal Modal from Header */}
+      <BookingModal
+        seat={null}
+        isOpen={isRenewModalOpen}
+        initialMode="renew"
+        onClose={() => setIsRenewModalOpen(false)}
+        onSuccess={() => {}}
+      />
     </header>
   );
 };
