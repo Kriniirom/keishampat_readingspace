@@ -6,7 +6,7 @@
 
 export const PRICING = {
   // Main full-day monthly subscription fee (Seat #01 to #18)
-  MONTHLY_FEE: 900,
+  MONTHLY_FEE: 800,
 
   // Half-day shift fee (Morning 5am-1pm or Evening 1pm-10pm)
   HALF_DAY_FEE: 500,
@@ -15,7 +15,7 @@ export const PRICING = {
   DAILY_PASS_FEE: 50,
 
   // 3-Month quarterly pass fee
-  QUARTERLY_FEE: 2500,
+  QUARTERLY_FEE: 2300,
 
   // Currency symbol
   CURRENCY: '₹',

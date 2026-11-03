@@ -42,9 +42,35 @@ import {
   ArrowRight,
   UserCheck,
   Layers,
+  Copy,
+  Check,
+  Smartphone,
 } from 'lucide-react';
 
 type ShiftType = 'morning' | 'evening' | 'fullday' | 'daypass';
+
+// ============================================================================
+// UPI PAYMENT CONFIGURATION
+// Direct bank/UPI settlement without gateway transaction fees
+// ============================================================================
+export const UPI_CONFIG = {
+  id: 'krinivash-2@oksbi',
+  name: 'keishampat Reading space',
+};
+
+// ============================================================================
+// SHIFT AVAILABILITY SWITCHES
+// Toggle Morning and Evening shifts ON (true) or OFF (false) anytime here:
+// ============================================================================
+export const ENABLE_MORNING_SHIFT = false; // Set to true to re-enable Morning Shift (5:00 AM – 1:00 PM)
+export const ENABLE_EVENING_SHIFT = false; // Set to true to re-enable Evening Shift (1:00 PM – 10:00 PM)
+
+// Helper to sanitize requested shift against current toggle switches
+const resolveShift = (requestedShift?: ShiftType): ShiftType => {
+  if (requestedShift === 'morning' && !ENABLE_MORNING_SHIFT) return 'fullday';
+  if (requestedShift === 'evening' && !ENABLE_EVENING_SHIFT) return 'fullday';
+  return requestedShift || 'fullday';
+};
 
 export interface BookingModalProps {
   seat: Seat | null;
@@ -75,7 +101,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   // --- NEW STUDENT STATE ---
   const [selectedSeat, setSelectedSeat] = useState<Seat | null>(seat);
-  const [shift, setShift] = useState<ShiftType>(initialShift || 'fullday');
+  const [shift, setShift] = useState<ShiftType>(resolveShift(initialShift));
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -83,6 +109,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [durationMonths, setDurationMonths] = useState<number>(1);
   const [newPaymentMethod, setNewPaymentMethod] = useState<'cash' | 'upi'>('cash');
   const [newTxnRef, setNewTxnRef] = useState('');
+  const [copiedUpi, setCopiedUpi] = useState(false);
+
+  const handleCopyUpi = () => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(UPI_CONFIG.id);
+      setCopiedUpi(true);
+      setTimeout(() => setCopiedUpi(false), 2000);
+    }
+  };
 
   const [newLoading, setNewLoading] = useState(false);
   const [newError, setNewError] = useState('');
@@ -109,7 +144,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       setActiveTab(initialMode);
       setSelectedSeat(seat);
       if (initialShift) {
-        setShift(initialShift);
+        setShift(resolveShift(initialShift));
       }
       setNewError('');
       setNewSuccess('');
@@ -135,15 +170,31 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   useEffect(() => {
     if (selectedSeat) {
-      if (isMorningOccupied && !isEveningOccupied) {
-        setShift('evening');
-      } else if (isEveningOccupied && !isMorningOccupied) {
-        setShift('morning');
-      } else if (!isMorningOccupied && !isEveningOccupied) {
-        setShift('fullday');
+        if (ENABLE_MORNING_SHIFT && ENABLE_EVENING_SHIFT) {
+          if (isMorningOccupied && !isEveningOccupied) {
+            setShift('evening');
+          } else if (isEveningOccupied && !isMorningOccupied) {
+            setShift('morning');
+          } else if (!isMorningOccupied && !isEveningOccupied) {
+            setShift('fullday');
+          }
+        } else if (ENABLE_MORNING_SHIFT && !ENABLE_EVENING_SHIFT) {
+          if (!isMorningOccupied) {
+            setShift('morning');
+          } else {
+            setShift('fullday');
+          }
+        } else if (ENABLE_EVENING_SHIFT && !ENABLE_MORNING_SHIFT) {
+          if (!isEveningOccupied) {
+            setShift('evening');
+          } else {
+            setShift('fullday');
+          }
+        } else {
+          setShift('fullday');
+        }
       }
-    }
-  }, [selectedSeat, isMorningOccupied, isEveningOccupied]);
+    }, [selectedSeat, isMorningOccupied, isEveningOccupied]);
 
   if (!isOpen || !mounted) return null;
 
@@ -218,6 +269,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       return;
     }
 
+    if (!ENABLE_MORNING_SHIFT && shift === 'morning') {
+      setNewError('Morning shift is currently unavailable. Please select Full Day or 1-Day Pass.');
+      return;
+    }
+    if (!ENABLE_EVENING_SHIFT && shift === 'evening') {
+      setNewError('Evening shift is currently unavailable. Please select Full Day or 1-Day Pass.');
+      return;
+    }
+
     if (shift === 'morning' && isMorningOccupied) {
       setNewError('Morning shift is already occupied for this desk. Please select the Evening shift.');
       return;
@@ -233,11 +293,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
     if (!fullName.trim() || !phone.trim() || !startDate) {
       setNewError('Please enter Student Name, Phone Number, and Start Date.');
-      return;
-    }
-
-    if (newPaymentMethod === 'upi' && !newTxnRef.trim()) {
-      setNewError('Please enter your 12-digit UPI Transaction / UTR Number for verification.');
       return;
     }
 
@@ -272,7 +327,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   // WhatsApp message generator for New Student / Day Pass
   const newStudentWhatsappMsg = encodeURIComponent(
-    `Hello Keishampat Reading Space,\nI have submitted a ${isDayPass ? '1-DAY ACCESS PASS' : 'NEW STUDENT'} booking:\n• Name: ${fullName.trim()}\n• Phone: ${phone.trim()}\n• Address: ${address.trim() || 'N/A'}\n• Seat: ${selectedSeat?.seatNumber || 'Desk'}\n• Plan: ${shiftLabelMap[shift]}\n• Date: ${startDate}\n• Fee: ₹${newTotalAmount} (${newPaymentMethod.toUpperCase()}${newTxnRef ? ` - UTR: ${newTxnRef}` : ''})\n• Booking ID: ${createdBookingId || 'Pending'}\nPlease verify my admission record.`
+    `Hello Keishampat Reading Space,\nI have submitted a ${isDayPass ? '1-DAY ACCESS PASS' : 'NEW STUDENT'} booking:\n• Name: ${fullName.trim()}\n• Phone: ${phone.trim()}\n• Address: ${address.trim() || 'N/A'}\n• Seat: ${selectedSeat?.seatNumber || 'Desk'}\n• Plan: ${shiftLabelMap[shift]}\n• Date: ${startDate}\n• Fee: ₹${newTotalAmount} (${newPaymentMethod.toUpperCase()}${newTxnRef.trim() ? ` - UTR: ${newTxnRef.trim()}` : (newPaymentMethod === 'upi' ? ' - Screenshot attached' : '')})\n• Booking ID: ${createdBookingId || 'Pending'}\nPlease verify my admission record.`
   );
 
   // --- EXISTING STUDENT SEARCH ---
@@ -311,11 +366,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     setRenewError('');
     setRenewSuccess('');
 
-    if (renewPaymentMethod === 'upi' && !renewTxnRef.trim()) {
-      setRenewError('Please enter your UPI Transaction / UTR Number for payment verification.');
-      return;
-    }
-
     const calculatedExpiry = calculateNewExpiry(selectedStudent.expiry);
 
     try {
@@ -349,13 +399,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   // WhatsApp message generator for Renewal
   const renewStudentWhatsappMsg = encodeURIComponent(
-    `Hello Keishampat Reading Space,\nI have submitted my MONTHLY RENEWAL:\n• Booking ID: ${selectedStudent?.bookingId}\n• Name: ${selectedStudent?.name}\n• Seat: ${selectedStudent?.seat}\n• Extended Expiry: ${renewedExpiry || (selectedStudent ? calculateNewExpiry(selectedStudent.expiry) : '')}\n• Amount Paid: ${PRICING.CURRENCY}${PRICING.MONTHLY_FEE} (${renewPaymentMethod.toUpperCase()}${renewTxnRef ? ` - UTR: ${renewTxnRef}` : ''})\nPlease verify my renewal.`
+    `Hello Keishampat Reading Space,\nI have submitted my MONTHLY RENEWAL:\n• Booking ID: ${selectedStudent?.bookingId}\n• Name: ${selectedStudent?.name}\n• Seat: ${selectedStudent?.seat}\n• Extended Expiry: ${renewedExpiry || (selectedStudent ? calculateNewExpiry(selectedStudent.expiry) : '')}\n• Amount Paid: ${PRICING.CURRENCY}${PRICING.MONTHLY_FEE} (${renewPaymentMethod.toUpperCase()}${renewTxnRef.trim() ? ` - UTR: ${renewTxnRef.trim()}` : (renewPaymentMethod === 'upi' ? ' - Screenshot attached' : '')})\nPlease verify my renewal.`
   );
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
       <div className="bg-[#FAF8F5] rounded-2xl sm:rounded-3xl max-w-xl w-full max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden shadow-2xl border border-[#E5E0D5]">
-        
+
         {/* Fixed Top Header */}
         <div className="bg-[#113826] text-white px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between flex-shrink-0 border-b border-[#1b4b34]">
           <div className="flex items-center space-x-2.5">
@@ -385,24 +435,22 @@ export const BookingModal: React.FC<BookingModalProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('new')}
-            className={`flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all ${
-              activeTab === 'new'
-                ? 'bg-[#113826] text-white shadow-md'
-                : 'text-[#55625B] hover:text-[#113826] hover:bg-[#F2EDE4]'
-            }`}
+            className={`flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all ${activeTab === 'new'
+              ? 'bg-[#113826] text-white shadow-md'
+              : 'text-[#55625B] hover:text-[#113826] hover:bg-[#F2EDE4]'
+              }`}
           >
             <Sparkles className="w-4 h-4 text-emerald-400" />
             <span>NEW STUDENT ({PRICING.CURRENCY}{PRICING.MONTHLY_FEE})</span>
           </button>
-          
+
           <button
             type="button"
             onClick={() => setActiveTab('renew')}
-            className={`flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all ${
-              activeTab === 'renew'
-                ? 'bg-[#113826] text-white shadow-md'
-                : 'text-[#55625B] hover:text-[#113826] hover:bg-[#F2EDE4]'
-            }`}
+            className={`flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all ${activeTab === 'renew'
+              ? 'bg-[#113826] text-white shadow-md'
+              : 'text-[#55625B] hover:text-[#113826] hover:bg-[#F2EDE4]'
+              }`}
           >
             <RefreshCw className="w-4 h-4 text-emerald-400" />
             <span>EXISTING STUDENT (Renew)</span>
@@ -590,12 +638,16 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     <option value="fullday" disabled={isFullDayOccupied}>
                       🌟 Full Day: 5:00 AM – 10:00 PM ({PRICING.CURRENCY}{PRICING.MONTHLY_FEE}/month) {isFullDayOccupied ? '— [Unavailable]' : '— [Standard Plan]'}
                     </option>
-                    <option value="morning" disabled={isMorningOccupied}>
-                      🌅 Morning Shift: 5:00 AM – 1:00 PM ({PRICING.CURRENCY}{PRICING.HALF_DAY_FEE}/month) {isMorningOccupied ? '— [Occupied]' : '— [Available]'}
-                    </option>
-                    <option value="evening" disabled={isEveningOccupied}>
-                      🌇 Evening Shift: 1:00 PM – 10:00 PM ({PRICING.CURRENCY}{PRICING.HALF_DAY_FEE}/month) {isEveningOccupied ? '— [Occupied]' : '— [Available]'}
-                    </option>
+                    {ENABLE_MORNING_SHIFT && (
+                      <option value="morning" disabled={isMorningOccupied}>
+                        🌅 Morning Shift: 5:00 AM – 1:00 PM ({PRICING.CURRENCY}{PRICING.HALF_DAY_FEE}/month) {isMorningOccupied ? '— [Occupied]' : '— [Available]'}
+                      </option>
+                    )}
+                    {ENABLE_EVENING_SHIFT && (
+                      <option value="evening" disabled={isEveningOccupied}>
+                        🌇 Evening Shift: 1:00 PM – 10:00 PM ({PRICING.CURRENCY}{PRICING.HALF_DAY_FEE}/month) {isEveningOccupied ? '— [Occupied]' : '— [Available]'}
+                      </option>
+                    )}
                     <option value="daypass" disabled={isFullDayOccupied}>
                       🎟️ 1-Day Pass: 5:00 AM – 10:00 PM ({PRICING.CURRENCY}{PRICING.DAILY_PASS_FEE}/day) {isFullDayOccupied ? '— [Unavailable]' : '— [Available]'}
                     </option>
@@ -636,11 +688,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setNewPaymentMethod('cash')}
-                    className={`p-2.5 rounded-xl border flex flex-col items-center justify-center space-y-0.5 transition-all ${
-                      newPaymentMethod === 'cash'
-                        ? 'bg-[#113826] text-white border-[#113826] shadow-md ring-2 ring-[#113826]/30'
-                        : 'bg-white text-[#3B4641] border-[#DCD5C8] hover:border-[#113826]'
-                    }`}
+                    className={`p-2.5 rounded-xl border flex flex-col items-center justify-center space-y-0.5 transition-all ${newPaymentMethod === 'cash'
+                      ? 'bg-[#113826] text-white border-[#113826] shadow-md ring-2 ring-[#113826]/30'
+                      : 'bg-white text-[#3B4641] border-[#DCD5C8] hover:border-[#113826]'
+                      }`}
                   >
                     <Banknote className="w-4 h-4" />
                     <span className="text-xs font-bold">Cash at Counter</span>
@@ -649,11 +700,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setNewPaymentMethod('upi')}
-                    className={`p-2.5 rounded-xl border flex flex-col items-center justify-center space-y-0.5 transition-all ${
-                      newPaymentMethod === 'upi'
-                        ? 'bg-[#113826] text-white border-[#113826] shadow-md ring-2 ring-[#113826]/30'
-                        : 'bg-white text-[#3B4641] border-[#DCD5C8] hover:border-[#113826]'
-                    }`}
+                    className={`p-2.5 rounded-xl border flex flex-col items-center justify-center space-y-0.5 transition-all ${newPaymentMethod === 'upi'
+                      ? 'bg-[#113826] text-white border-[#113826] shadow-md ring-2 ring-[#113826]/30'
+                      : 'bg-white text-[#3B4641] border-[#DCD5C8] hover:border-[#113826]'
+                      }`}
                   >
                     <QrCode className="w-4 h-4" />
                     <span className="text-xs font-bold">UPI Payment</span>
@@ -661,19 +711,96 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 </div>
 
                 {newPaymentMethod === 'upi' && (
-                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-950 space-y-2 text-xs">
-                    <div className="flex items-center justify-between font-bold">
-                      <span>UPI: keishampatreading@upi</span>
-                      <span>Pay ₹{newTotalAmount}</span>
+                  <div className="p-3.5 rounded-2xl bg-[#F6FAF7] border-2 border-emerald-300 text-emerald-950 space-y-3 text-xs shadow-sm">
+                    {/* Header with Amount */}
+                    <div className="flex items-center justify-between font-extrabold border-b border-emerald-200 pb-2">
+                      <div className="flex items-center space-x-1.5 text-[#113826]">
+                        <QrCode className="w-4 h-4 text-emerald-700" />
+                        <span className="text-xs uppercase tracking-wider">Fast UPI Payment</span>
+                      </div>
+                      <span className="text-sm font-black text-emerald-900 bg-emerald-100 px-2.5 py-0.5 rounded-lg border border-emerald-300">
+                        ₹{newTotalAmount}
+                      </span>
                     </div>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Enter 12-digit UTR / Ref Number"
-                      value={newTxnRef}
-                      onChange={(e) => setNewTxnRef(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-emerald-400 bg-white text-xs font-bold outline-none"
-                    />
+
+                    {/* 1-Click Pay with UPI App (GPay / PhonePe / Paytm / BHIM) */}
+                    <a
+                      href={`upi://pay?pa=${encodeURIComponent(UPI_CONFIG.id)}&pn=${encodeURIComponent(UPI_CONFIG.name)}&am=${newTotalAmount}&cu=INR&tn=${encodeURIComponent('KRS Admission ' + (selectedSeat?.seatNumber || 'Desk'))}`}
+                      className="w-full flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-700 via-[#113826] to-emerald-800 hover:opacity-95 text-white font-extrabold text-xs shadow-md transition-all active:scale-[0.98]"
+                    >
+                      <Smartphone className="w-4 h-4 text-emerald-300 animate-pulse" />
+                      <span>Tap to Pay ₹{newTotalAmount} (GPay / PhonePe / Paytm)</span>
+                    </a>
+
+                    {/* QR Code + Copy UPI ID Card */}
+                    <div className="flex flex-col sm:flex-row items-center gap-3 bg-white p-3 rounded-xl border border-emerald-200">
+                      <div className="bg-white p-1 rounded-lg border border-gray-200 shadow-sm flex flex-col items-center flex-shrink-0">
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=${UPI_CONFIG.id}&pn=${encodeURIComponent(UPI_CONFIG.name)}&am=${newTotalAmount}&cu=INR&tn=${encodeURIComponent('KRS Admission')}`)}`}
+                          alt="Scan to Pay via UPI"
+                          width={110}
+                          height={110}
+                          className="w-24 h-24 sm:w-28 sm:h-28 object-contain"
+                          loading="lazy"
+                        />
+                        <span className="text-[9px] font-bold text-gray-500 mt-0.5">Scan to Pay</span>
+                      </div>
+
+                      <div className="flex-1 space-y-2 text-center sm:text-left w-full">
+                        <div>
+                          <span className="text-[10px] text-gray-500 font-semibold block uppercase tracking-wider">
+                            UPI ID / VPA
+                          </span>
+                          <div className="flex items-center justify-center sm:justify-start space-x-1.5 mt-1">
+                            <span className="font-mono font-bold text-emerald-950 text-xs bg-emerald-100/70 px-2 py-1 rounded border border-emerald-300 select-all">
+                              {UPI_CONFIG.id}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={handleCopyUpi}
+                              className="px-2.5 py-1 rounded-lg bg-[#113826] hover:bg-[#0b2318] text-white text-[11px] font-bold flex items-center space-x-1 transition-all shadow-sm active:scale-95"
+                              title="Copy UPI ID"
+                            >
+                              {copiedUpi ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                  <span>Copied!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5" />
+                                  <span>Copy</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-gray-600 leading-snug">
+                          Payee: <strong className="text-emerald-950">{UPI_CONFIG.name}</strong>
+                          <br />
+                          <span className="text-[10px] text-gray-500">Scan with Google Pay, PhonePe, Paytm, or BHIM</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* UTR / Ref (Optional) */}
+                    <div className="space-y-1 pt-1 border-t border-emerald-200/60">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-bold text-emerald-950">
+                          12-digit UTR / Ref No. <span className="font-normal text-gray-500">(Optional)</span>
+                        </span>
+                        <span className="text-[10px] font-semibold text-emerald-700">
+                          Or send screenshot on WhatsApp
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="e.g. 429381902812 (Leave blank if you prefer sending screenshot)"
+                        value={newTxnRef}
+                        onChange={(e) => setNewTxnRef(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-white text-xs font-semibold outline-none focus:border-[#113826] focus:ring-1 focus:ring-[#113826]/20 transition-all placeholder:font-normal placeholder:text-gray-400"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -714,7 +841,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         {activeTab === 'renew' && (
           <div className="flex flex-col flex-grow overflow-hidden">
             <div className="flex-grow overflow-y-auto px-4 py-3.5 sm:px-6 sm:py-4 space-y-4">
-              
+
               {/* Progress Banner for Renewal */}
               <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-2.5 sm:p-3 flex items-center justify-between text-[11px] sm:text-xs font-bold text-emerald-900 shadow-sm">
                 <span className="flex items-center space-x-1">
@@ -891,11 +1018,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                             key={b.bookingId}
                             type="button"
                             onClick={() => setSelectedStudent(b)}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
-                              selectedStudent.bookingId === b.bookingId
-                                ? 'bg-[#113826] text-white'
-                                : 'bg-[#EBE5DA] text-gray-700 hover:bg-[#DDD6C8]'
-                            }`}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${selectedStudent.bookingId === b.bookingId
+                              ? 'bg-[#113826] text-white'
+                              : 'bg-[#EBE5DA] text-gray-700 hover:bg-[#DDD6C8]'
+                              }`}
                           >
                             {b.bookingId} ({b.seat})
                           </button>
@@ -932,11 +1058,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         <button
                           type="button"
                           onClick={() => setRenewPaymentMethod('cash')}
-                          className={`p-2.5 rounded-xl border flex flex-col items-center justify-center space-y-0.5 transition-all ${
-                            renewPaymentMethod === 'cash'
-                              ? 'bg-[#113826] text-white border-[#113826] shadow-md ring-2 ring-[#113826]/30'
-                              : 'bg-white text-[#3B4641] border-[#DCD5C8] hover:border-[#113826]'
-                          }`}
+                          className={`p-2.5 rounded-xl border flex flex-col items-center justify-center space-y-0.5 transition-all ${renewPaymentMethod === 'cash'
+                            ? 'bg-[#113826] text-white border-[#113826] shadow-md ring-2 ring-[#113826]/30'
+                            : 'bg-white text-[#3B4641] border-[#DCD5C8] hover:border-[#113826]'
+                            }`}
                         >
                           <Banknote className="w-4 h-4" />
                           <span className="text-xs font-bold">Cash at Counter</span>
@@ -945,11 +1070,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         <button
                           type="button"
                           onClick={() => setRenewPaymentMethod('upi')}
-                          className={`p-2.5 rounded-xl border flex flex-col items-center justify-center space-y-0.5 transition-all ${
-                            renewPaymentMethod === 'upi'
-                              ? 'bg-[#113826] text-white border-[#113826] shadow-md ring-2 ring-[#113826]/30'
-                              : 'bg-white text-[#3B4641] border-[#DCD5C8] hover:border-[#113826]'
-                          }`}
+                          className={`p-2.5 rounded-xl border flex flex-col items-center justify-center space-y-0.5 transition-all ${renewPaymentMethod === 'upi'
+                            ? 'bg-[#113826] text-white border-[#113826] shadow-md ring-2 ring-[#113826]/30'
+                            : 'bg-white text-[#3B4641] border-[#DCD5C8] hover:border-[#113826]'
+                            }`}
                         >
                           <QrCode className="w-4 h-4" />
                           <span className="text-xs font-bold">UPI Payment</span>
@@ -957,19 +1081,96 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       </div>
 
                       {renewPaymentMethod === 'upi' && (
-                        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-950 space-y-2 text-xs">
-                          <div className="flex items-center justify-between font-bold">
-                            <span>UPI: keishampatreading@upi</span>
-                            <span>Amount: {PRICING.CURRENCY}{PRICING.MONTHLY_FEE}</span>
+                        <div className="p-3.5 rounded-2xl bg-[#F6FAF7] border-2 border-emerald-300 text-emerald-950 space-y-3 text-xs shadow-sm">
+                          {/* Header with Amount */}
+                          <div className="flex items-center justify-between font-extrabold border-b border-emerald-200 pb-2">
+                            <div className="flex items-center space-x-1.5 text-[#113826]">
+                              <QrCode className="w-4 h-4 text-emerald-700" />
+                              <span className="text-xs uppercase tracking-wider">Fast UPI Renewal</span>
+                            </div>
+                            <span className="text-sm font-black text-emerald-900 bg-emerald-100 px-2.5 py-0.5 rounded-lg border border-emerald-300">
+                              {PRICING.CURRENCY}{PRICING.MONTHLY_FEE}
+                            </span>
                           </div>
-                          <input
-                            type="text"
-                            required
-                            placeholder="Enter 12-digit UTR / Ref Number"
-                            value={renewTxnRef}
-                            onChange={(e) => setRenewTxnRef(e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-emerald-400 bg-white text-xs font-bold outline-none"
-                          />
+
+                          {/* 1-Click Pay with UPI App */}
+                          <a
+                            href={`upi://pay?pa=${encodeURIComponent(UPI_CONFIG.id)}&pn=${encodeURIComponent(UPI_CONFIG.name)}&am=${PRICING.MONTHLY_FEE}&cu=INR&tn=${encodeURIComponent('KRS Renewal ' + (selectedStudent?.bookingId || ''))}`}
+                            className="w-full flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-700 via-[#113826] to-emerald-800 hover:opacity-95 text-white font-extrabold text-xs shadow-md transition-all active:scale-[0.98]"
+                          >
+                            <Smartphone className="w-4 h-4 text-emerald-300 animate-pulse" />
+                            <span>Tap to Pay {PRICING.CURRENCY}{PRICING.MONTHLY_FEE} (GPay / PhonePe / Paytm)</span>
+                          </a>
+
+                          {/* QR Code + Copy UPI ID Card */}
+                          <div className="flex flex-col sm:flex-row items-center gap-3 bg-white p-3 rounded-xl border border-emerald-200">
+                            <div className="bg-white p-1 rounded-lg border border-gray-200 shadow-sm flex flex-col items-center flex-shrink-0">
+                              <img
+                                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=${UPI_CONFIG.id}&pn=${encodeURIComponent(UPI_CONFIG.name)}&am=${PRICING.MONTHLY_FEE}&cu=INR&tn=${encodeURIComponent('KRS Renewal ' + (selectedStudent?.bookingId || ''))}`)}`}
+                                alt="Scan to Pay via UPI"
+                                width={110}
+                                height={110}
+                                className="w-24 h-24 sm:w-28 sm:h-28 object-contain"
+                                loading="lazy"
+                              />
+                              <span className="text-[9px] font-bold text-gray-500 mt-0.5">Scan to Pay</span>
+                            </div>
+
+                            <div className="flex-1 space-y-2 text-center sm:text-left w-full">
+                              <div>
+                                <span className="text-[10px] text-gray-500 font-semibold block uppercase tracking-wider">
+                                  UPI ID / VPA
+                                </span>
+                                <div className="flex items-center justify-center sm:justify-start space-x-1.5 mt-1">
+                                  <span className="font-mono font-bold text-emerald-950 text-xs bg-emerald-100/70 px-2 py-1 rounded border border-emerald-300 select-all">
+                                    {UPI_CONFIG.id}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={handleCopyUpi}
+                                    className="px-2.5 py-1 rounded-lg bg-[#113826] hover:bg-[#0b2318] text-white text-[11px] font-bold flex items-center space-x-1 transition-all shadow-sm active:scale-95"
+                                    title="Copy UPI ID"
+                                  >
+                                    {copiedUpi ? (
+                                      <>
+                                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                        <span>Copied!</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Copy className="w-3.5 h-3.5" />
+                                        <span>Copy</span>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                              <p className="text-[11px] text-gray-600 leading-snug">
+                                Payee: <strong className="text-emerald-950">{UPI_CONFIG.name}</strong>
+                                <br />
+                                <span className="text-[10px] text-gray-500">Scan with Google Pay, PhonePe, Paytm, or BHIM</span>
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* UTR / Ref (Optional) */}
+                          <div className="space-y-1 pt-1 border-t border-emerald-200/60">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="font-bold text-emerald-950">
+                                12-digit UTR / Ref No. <span className="font-normal text-gray-500">(Optional)</span>
+                              </span>
+                              <span className="text-[10px] font-semibold text-emerald-700">
+                                Or send screenshot on WhatsApp
+                              </span>
+                            </div>
+                            <input
+                              type="text"
+                              placeholder="e.g. 429381902812 (Leave blank if you prefer sending screenshot)"
+                              value={renewTxnRef}
+                              onChange={(e) => setRenewTxnRef(e.target.value)}
+                              className="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-white text-xs font-semibold outline-none focus:border-[#113826] focus:ring-1 focus:ring-[#113826]/20 transition-all placeholder:font-normal placeholder:text-gray-400"
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
