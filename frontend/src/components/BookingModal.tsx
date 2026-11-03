@@ -55,7 +55,7 @@ type ShiftType = 'morning' | 'evening' | 'fullday' | 'daypass';
 // ============================================================================
 export const UPI_CONFIG = {
   id: 'krinivash-2@oksbi',
-  name: 'keishampat Reading space',
+  name: 'Irom Krinivash singh',
 };
 
 // ============================================================================
@@ -801,6 +801,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         className="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-white text-xs font-semibold outline-none focus:border-[#113826] focus:ring-1 focus:ring-[#113826]/20 transition-all placeholder:font-normal placeholder:text-gray-400"
                       />
                     </div>
+
+                    {/* Step Reminder Note */}
+                    <div className="text-[10px] text-emerald-900 bg-emerald-100/70 p-2 rounded-xl border border-emerald-200 leading-tight">
+                      💡 <strong>After paying in GPay/PhonePe:</strong> Return to this tab and tap <strong>&quot;I Have Paid — Activate Student&quot;</strong> below.
+                    </div>
                   </div>
                 )}
               </div>
@@ -829,7 +834,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 ) : (
                   <>
                     <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                    <span>{isDayPass ? `Pay ₹${newTotalAmount} & Book 1-Day Pass` : `Pay ₹${newTotalAmount} & Activate Student`}</span>
+                    <span>
+                      {isDayPass
+                        ? `Pay ₹${newTotalAmount} & Book 1-Day Pass`
+                        : (newPaymentMethod === 'upi'
+                          ? `I Have Paid ₹${newTotalAmount} — Activate Student`
+                          : `Pay ₹${newTotalAmount} & Activate Student`)}
+                    </span>
                   </>
                 )}
               </button>
@@ -1171,6 +1182,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                               className="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-white text-xs font-semibold outline-none focus:border-[#113826] focus:ring-1 focus:ring-[#113826]/20 transition-all placeholder:font-normal placeholder:text-gray-400"
                             />
                           </div>
+
+                          {/* Step Reminder Note */}
+                          <div className="text-[10px] text-emerald-900 bg-emerald-100/70 p-2 rounded-xl border border-emerald-200 leading-tight">
+                            💡 <strong>After paying in GPay/PhonePe:</strong> Return to this tab and tap <strong>&quot;I Have Paid — Confirm Renewal&quot;</strong> below.
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1182,7 +1198,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       </div>
                     )}
 
-                    {/* Step 4 & 5: Action Button: "Renew for next month" / Pay ₹900 */}
+                    {/* Step 4 & 5: Action Button */}
                     <button
                       type="submit"
                       disabled={renewLoading}
@@ -1196,7 +1212,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       ) : (
                         <>
                           <RefreshCw className="w-4 h-4 text-emerald-300" />
-                          <span>Renew for next month (Pay {PRICING.CURRENCY}{PRICING.MONTHLY_FEE})</span>
+                          <span>
+                            {renewPaymentMethod === 'upi'
+                              ? `I Have Paid — Confirm Renewal (+1 Month)`
+                              : `Renew for next month (Pay ${PRICING.CURRENCY}${PRICING.MONTHLY_FEE})`}
+                          </span>
                         </>
                       )}
                     </button>
