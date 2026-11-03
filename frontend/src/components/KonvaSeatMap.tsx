@@ -10,6 +10,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Stage, Layer, Group, Rect, Circle, Line, Arc, Text } from 'react-konva';
 import { Seat } from '../lib/api';
+import { PRICING } from '../lib/pricing';
 import { ZoomIn, ZoomOut, RotateCcw, Hand, Sparkles } from 'lucide-react';
 
 interface KonvaSeatMapProps {
@@ -483,12 +484,10 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
                   y={-14}
                   text={
                     hoveredSeat?.status === 'occupied'
-                      ? 'OCCUPIED • ₹900/mo'
-                      : hoveredSeat?.shiftsOccupied?.morning && !hoveredSeat?.shiftsOccupied?.evening
-                      ? 'EVE AVAILABLE • ₹900/mo'
-                      : hoveredSeat?.shiftsOccupied?.evening && !hoveredSeat?.shiftsOccupied?.morning
-                      ? 'MORN AVAILABLE • ₹900/mo'
-                      : 'AVAILABLE • ₹900/mo'
+                      ? (hoveredSeat?.isInGracePeriod
+                        ? `RESERVED (GRACE) • ${PRICING.CURRENCY}${PRICING.MONTHLY_FEE}/mo`
+                        : `OCCUPIED • ${PRICING.CURRENCY}${PRICING.MONTHLY_FEE}/mo`)
+                      : `AVAILABLE • ${PRICING.CURRENCY}${PRICING.MONTHLY_FEE}/mo`
                   }
                   fontSize={11}
                   fontStyle="bold"

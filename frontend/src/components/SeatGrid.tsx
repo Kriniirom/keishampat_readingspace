@@ -85,7 +85,16 @@ export const SeatGrid: React.FC<SeatGridProps> = ({ seats, selectedSeatId, onSel
                   #{seat.id.toString().padStart(2, '0')}
                 </span>
                 {isOccupied ? (
-                  <Lock className="w-3.5 h-3.5 text-amber-600" />
+                  seat.isInGracePeriod ? (
+                    <span
+                      className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300"
+                      title={`7-Day Warning Period: ${seat.graceDaysRemaining}d remaining for current student`}
+                    >
+                      Grace {seat.graceDaysRemaining}d
+                    </span>
+                  ) : (
+                    <Lock className="w-3.5 h-3.5 text-amber-600" />
+                  )
                 ) : isSelected ? (
                   <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
                 ) : seat.shiftsOccupied?.morning && !seat.shiftsOccupied?.evening ? (
@@ -114,7 +123,7 @@ export const SeatGrid: React.FC<SeatGridProps> = ({ seats, selectedSeatId, onSel
                 </div>
                 <span className="text-xs font-semibold mt-1">
                   {isOccupied
-                    ? 'Occupied'
+                    ? (seat.isInGracePeriod ? 'Reserved' : 'Occupied')
                     : seat.shiftsOccupied?.morning && !seat.shiftsOccupied?.evening
                     ? 'Eve Available'
                     : seat.shiftsOccupied?.evening && !seat.shiftsOccupied?.morning

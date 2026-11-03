@@ -29,6 +29,8 @@ export interface Seat {
   hasDeskLamp: boolean;
   reservedBy?: { name: string; phone: string } | null;
   shiftsOccupied?: SeatShifts;
+  isInGracePeriod?: boolean;
+  graceDaysRemaining?: number;
 }
 
 /**
@@ -242,6 +244,8 @@ export const fetchSeats = async (): Promise<{ seats: Seat[]; totalSeats: number;
     let isMorningOccupied = false;
     let isEveningOccupied = false;
     let activeReservedBy: { name: string; phone: string } | null = null;
+    let isSeatInGracePeriod = false;
+    let seatGraceDaysRemaining = 0;
 
     for (const match of seatBookings) {
       const statusStr = String(match.status || match.Status || '').trim().toLowerCase();
@@ -260,13 +264,20 @@ export const fetchSeats = async (): Promise<{ seats: Seat[]; totalSeats: number;
       // Check if date has expired beyond the 7-day grace period
       // Current students have a 7-day warning period to update payment before desk is freed
       let isDateExpired = false;
+      let inGrace = false;
+      let graceDaysLeft = 0;
       if (expiryStr) {
         const expDate = parseDateRobust(expiryStr);
         if (expDate) {
+          expDate.setHours(23, 59, 59, 999);
           const gracePeriodEnd = new Date(expDate);
           gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 7);
           gracePeriodEnd.setHours(23, 59, 59, 999); // Desk remains reserved through the 7-day warning period
-          if (gracePeriodEnd < todayDate) {
+          if (todayDate > expDate && todayDate <= gracePeriodEnd) {
+            inGrace = true;
+            const diffMs = gracePeriodEnd.getTime() - todayDate.getTime();
+            graceDaysLeft = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+          } else if (todayDate > gracePeriodEnd) {
             isDateExpired = true;
           }
         }
@@ -284,6 +295,11 @@ export const fetchSeats = async (): Promise<{ seats: Seat[]; totalSeats: number;
       );
 
       if (isBooked) {
+        if (inGrace) {
+          isSeatInGracePeriod = true;
+          seatGraceDaysRemaining = graceDaysLeft;
+        }
+
         if (!activeReservedBy) {
           activeReservedBy = {
             name: match.name || match.Name || 'Booked Member',
@@ -315,6 +331,8 @@ export const fetchSeats = async (): Promise<{ seats: Seat[]; totalSeats: number;
     const isFullyOccupied = isMorningOccupied && isEveningOccupied;
     seat.status = isFullyOccupied ? 'occupied' : 'available';
     seat.reservedBy = activeReservedBy;
+    seat.isInGracePeriod = isSeatInGracePeriod;
+    seat.graceDaysRemaining = seatGraceDaysRemaining;
     seat.shiftsOccupied = {
       morning: isMorningOccupied,
       evening: isEveningOccupied,
