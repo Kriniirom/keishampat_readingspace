@@ -221,8 +221,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     let baseDate = today;
     if (currentExpiryStr) {
       const parsed = parseDateRobust(currentExpiryStr);
-      if (parsed && !isNaN(parsed.getTime()) && parsed >= today) {
-        baseDate = parsed;
+      if (parsed && !isNaN(parsed.getTime())) {
+        // If renewed in advance, extend from current expiry
+        // If renewed during 7-day grace period, extend from original expiry date
+        const graceEnd = new Date(parsed);
+        graceEnd.setDate(graceEnd.getDate() + 7);
+        if (parsed >= today || today <= graceEnd) {
+          baseDate = parsed;
+        }
       }
     }
 
@@ -231,16 +237,29 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     return nextMonth.toISOString().split('T')[0];
   };
 
-  const getDaysRemaining = (expiryStr: string): { days: number; isExpired: boolean } => {
-    if (!expiryStr) return { days: 0, isExpired: true };
+  const getDaysRemaining = (expiryStr: string): {
+    days: number;
+    isExpired: boolean;
+    inGracePeriod: boolean;
+    graceDaysLeft: number;
+  } => {
+    if (!expiryStr) {
+      return { days: 0, isExpired: true, inGracePeriod: false, graceDaysLeft: 0 };
+    }
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const exp = parseDateRobust(expiryStr);
-    if (!exp || isNaN(exp.getTime())) return { days: 0, isExpired: true };
+    if (!exp || isNaN(exp.getTime())) {
+      return { days: 0, isExpired: true, inGracePeriod: false, graceDaysLeft: 0 };
+    }
     exp.setHours(23, 59, 59, 999);
     const diffMs = exp.getTime() - today.getTime();
     const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    return { days, isExpired: days < 0 };
+    const isPastExpiry = days < 0;
+    const inGracePeriod = isPastExpiry && days >= -7;
+    const graceDaysLeft = inGracePeriod ? (7 + days) : 0;
+    const isExpired = days < -7;
+    return { days, isExpired, inGracePeriod, graceDaysLeft };
   };
 
   // --- NEW STUDENT SUBMIT ---
@@ -969,7 +988,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
                     {/* Expiry / Active Status Badge */}
                     {(() => {
-                      const { days, isExpired } = getDaysRemaining(selectedStudent.expiry);
+                      const { days, isExpired, inGracePeriod, graceDaysLeft } = getDaysRemaining(selectedStudent.expiry);
+                      if (inGracePeriod) {
+                        return (
+                          <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 font-extrabold text-[10px] uppercase tracking-wider border border-amber-300 animate-pulse">
+                            ⚠️ 7-Day Grace: {graceDaysLeft} {graceDaysLeft === 1 ? 'Day' : 'Days'} Left
+                          </span>
+                        );
+                      }
                       if (isExpired) {
                         return (
                           <span className="px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 font-extrabold text-[10px] uppercase tracking-wider border border-rose-200">
@@ -1016,6 +1042,27 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       </strong>
                     </div>
                   </div>
+
+                  {/* 7-Day Grace Period Alert */}
+                  {(() => {
+                    const { inGracePeriod, graceDaysLeft } = getDaysRemaining(selectedStudent.expiry);
+                    if (!inGracePeriod) return null;
+                    const exp = parseDateRobust(selectedStudent.expiry);
+                    const deadline = exp ? new Date(exp.getTime() + 7 * 24 * 60 * 60 * 1000) : null;
+                    const deadlineStr = deadline ? formatDateReadable(deadline.toISOString().split('T')[0]) : '7 days';
+
+                    return (
+                      <div className="p-3 rounded-xl bg-amber-50/90 border border-amber-300 text-amber-950 space-y-1 text-xs">
+                        <div className="flex items-center space-x-1.5 font-bold text-amber-900">
+                          <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                          <span>7-Day Renewal Warning Period Active</span>
+                        </div>
+                        <p className="text-[11px] leading-relaxed text-amber-900">
+                          Your monthly subscription expired on <strong>{formatDateReadable(selectedStudent.expiry)}</strong>. Your desk is kept reserved for you during this 7-day grace period until <strong>{deadlineStr}</strong> ({graceDaysLeft} {graceDaysLeft === 1 ? 'day' : 'days'} remaining). Please renew before the deadline to keep your desk.
+                        </p>
+                      </div>
+                    );
+                  })()}
 
                   {/* Multiple records selector if user has multiple bookings under same phone */}
                   {searchResults.length > 1 && (

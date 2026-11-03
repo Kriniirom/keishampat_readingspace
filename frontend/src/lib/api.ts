@@ -257,13 +257,16 @@ export const fetchSeats = async (): Promise<{ seats: Seat[]; totalSeats: number;
         statusStr.includes('free')
       );
 
-      // Check if date has expired (yesterday or earlier)
+      // Check if date has expired beyond the 7-day grace period
+      // Current students have a 7-day warning period to update payment before desk is freed
       let isDateExpired = false;
       if (expiryStr) {
         const expDate = parseDateRobust(expiryStr);
         if (expDate) {
-          expDate.setHours(23, 59, 59, 999); // Active through the end of the expiry day
-          if (expDate < todayDate) {
+          const gracePeriodEnd = new Date(expDate);
+          gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 7);
+          gracePeriodEnd.setHours(23, 59, 59, 999); // Desk remains reserved through the 7-day warning period
+          if (gracePeriodEnd < todayDate) {
             isDateExpired = true;
           }
         }
