@@ -808,24 +808,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       </div>
                     </div>
 
-                    {/* UTR / Ref (Optional) */}
-                    <div className="space-y-1 pt-1 border-t border-emerald-200/60">
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="font-bold text-emerald-950">
-                          12-digit UTR / Ref No. <span className="font-normal text-gray-500">(Optional)</span>
-                        </span>
-                        <span className="text-[10px] font-semibold text-emerald-700">
-                          Or send screenshot on WhatsApp
-                        </span>
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="e.g. 429381902812 (Leave blank if you prefer sending screenshot)"
-                        value={newTxnRef}
-                        onChange={(e) => setNewTxnRef(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-white text-xs font-semibold outline-none focus:border-[#113826] focus:ring-1 focus:ring-[#113826]/20 transition-all placeholder:font-normal placeholder:text-gray-400"
-                      />
-                    </div>
 
                     {/* Step Reminder Note */}
                     <div className="text-[10px] text-emerald-900 bg-emerald-100/70 p-2 rounded-xl border border-emerald-200 leading-tight">
@@ -1223,24 +1205,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                             </div>
                           </div>
 
-                          {/* UTR / Ref (Optional) */}
-                          <div className="space-y-1 pt-1 border-t border-emerald-200/60">
-                            <div className="flex items-center justify-between text-[11px]">
-                              <span className="font-bold text-emerald-950">
-                                12-digit UTR / Ref No. <span className="font-normal text-gray-500">(Optional)</span>
-                              </span>
-                              <span className="text-[10px] font-semibold text-emerald-700">
-                                Or send screenshot on WhatsApp
-                              </span>
-                            </div>
-                            <input
-                              type="text"
-                              placeholder="e.g. 429381902812 (Leave blank if you prefer sending screenshot)"
-                              value={renewTxnRef}
-                              onChange={(e) => setRenewTxnRef(e.target.value)}
-                              className="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-white text-xs font-semibold outline-none focus:border-[#113826] focus:ring-1 focus:ring-[#113826]/20 transition-all placeholder:font-normal placeholder:text-gray-400"
-                            />
-                          </div>
 
                           {/* Step Reminder Note */}
                           <div className="text-[10px] text-emerald-900 bg-emerald-100/70 p-2 rounded-xl border border-emerald-200 leading-tight">
