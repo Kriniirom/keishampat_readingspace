@@ -85,7 +85,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onBookClick }) => {
               {/* Operating Hours item */}
               <div className="flex items-center space-x-3 text-[#2C3531]">
                 <Clock className="w-5 h-5 text-[#113826] flex-shrink-0" />
-                <span className="font-semibold text-base sm:text-lg">5:00 AM – 11:00 PM (Everyday)</span>
+                <span className="font-semibold text-base sm:text-lg">24/7 Open (Everyday)</span>
               </div>
 
               {/* Total Seats item */}
@@ -97,7 +97,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onBookClick }) => {
               {/* Pricing item */}
               <div className="flex items-center space-x-3 text-[#2C3531]">
                 <IndianRupee className="w-5 h-5 text-[#113826] flex-shrink-0" />
-                <span className="font-semibold text-base sm:text-lg">{PRICING.CURRENCY}{PRICING.MONTHLY_FEE} per month</span>
+                <span className="font-semibold text-base sm:text-lg flex items-center gap-2">
+                  <span className="line-through text-gray-400">₹900</span>
+                  <span>{PRICING.CURRENCY}{PRICING.MONTHLY_FEE} per month</span>
+                </span>
               </div>
             </div>
 
