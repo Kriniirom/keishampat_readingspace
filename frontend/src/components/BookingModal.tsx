@@ -745,10 +745,16 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     {/* 1-Click Pay with UPI App (GPay / PhonePe / Paytm / BHIM) */}
                     <a
                       href={`upi://pay?pa=${encodeURIComponent(UPI_CONFIG.id)}&pn=${encodeURIComponent(UPI_CONFIG.name)}&am=${newTotalAmount}&cu=INR&tn=${encodeURIComponent('KRS Admission ' + (selectedSeat?.seatNumber || 'Desk'))}`}
-                      className="w-full flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-700 via-[#113826] to-emerald-800 hover:opacity-95 text-white font-extrabold text-xs shadow-md transition-all active:scale-[0.98]"
+                      className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-[#1a5c35] via-[#113826] to-[#1a5c35] hover:from-[#1f6b3e] hover:to-[#1f6b3e] text-white font-extrabold text-sm shadow-lg ring-2 ring-white/20 ring-offset-1 ring-offset-emerald-900 transition-all active:scale-[0.98] cursor-pointer"
                     >
-                      <Smartphone className="w-4 h-4 text-emerald-300 animate-pulse" />
-                      <span>Tap to Pay ₹{newTotalAmount} (GPay / PhonePe / Paytm)</span>
+                      {/* Google G logo */}
+                      <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+                        <path fill="#fff" d="M44.5 20H24v8.5h11.7C34.3 33.6 29.7 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 6 1.1 8.1 3l6-6C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 20-7.6 20-21 0-1.4-.1-2.7-.5-4z"/>
+                        <path fill="#FBBC05" d="M6.3 14.7l7 5.1C15.1 15.6 19.2 12 24 12c3.1 0 6 1.1 8.1 3l6-6C34.6 5.1 29.6 3 24 3 16.3 3 9.7 7.9 6.3 14.7z"/>
+                        <path fill="#34A853" d="M24 45c5.5 0 10.5-1.9 14.4-5.1l-6.7-5.5C29.7 36.1 27 37 24 37c-5.7 0-10.3-3.4-11.7-8.5l-7 5.4C8.7 41.1 15.8 45 24 45z"/>
+                        <path fill="#EA4335" d="M44.5 20H24v8.5h11.7c-.6 2.1-1.9 3.9-3.7 5.2l6.7 5.5C42.5 36.1 45 30.4 45 24c0-1.4-.1-2.7-.5-4z"/>
+                      </svg>
+                      <span>Pay ₹{newTotalAmount} Directly through GPay</span>
                     </a>
 
                     {/* QR Code + Copy UPI ID Card */}
@@ -1154,10 +1160,16 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                           {/* 1-Click Pay with UPI App */}
                           <a
                             href={`upi://pay?pa=${encodeURIComponent(UPI_CONFIG.id)}&pn=${encodeURIComponent(UPI_CONFIG.name)}&am=${PRICING.MONTHLY_FEE}&cu=INR&tn=${encodeURIComponent('KRS Renewal ' + (selectedStudent?.bookingId || ''))}`}
-                            className="w-full flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-700 via-[#113826] to-emerald-800 hover:opacity-95 text-white font-extrabold text-xs shadow-md transition-all active:scale-[0.98]"
+                            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-[#1a5c35] via-[#113826] to-[#1a5c35] hover:from-[#1f6b3e] hover:to-[#1f6b3e] text-white font-extrabold text-sm shadow-lg ring-2 ring-white/20 ring-offset-1 ring-offset-emerald-900 transition-all active:scale-[0.98] cursor-pointer"
                           >
-                            <Smartphone className="w-4 h-4 text-emerald-300 animate-pulse" />
-                            <span>Tap to Pay {PRICING.CURRENCY}{PRICING.MONTHLY_FEE} (GPay / PhonePe / Paytm)</span>
+                            {/* Google G logo */}
+                            <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+                              <path fill="#fff" d="M44.5 20H24v8.5h11.7C34.3 33.6 29.7 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 6 1.1 8.1 3l6-6C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 20-7.6 20-21 0-1.4-.1-2.7-.5-4z"/>
+                              <path fill="#FBBC05" d="M6.3 14.7l7 5.1C15.1 15.6 19.2 12 24 12c3.1 0 6 1.1 8.1 3l6-6C34.6 5.1 29.6 3 24 3 16.3 3 9.7 7.9 6.3 14.7z"/>
+                              <path fill="#34A853" d="M24 45c5.5 0 10.5-1.9 14.4-5.1l-6.7-5.5C29.7 36.1 27 37 24 37c-5.7 0-10.3-3.4-11.7-8.5l-7 5.4C8.7 41.1 15.8 45 24 45z"/>
+                              <path fill="#EA4335" d="M44.5 20H24v8.5h11.7c-.6 2.1-1.9 3.9-3.7 5.2l6.7 5.5C42.5 36.1 45 30.4 45 24c0-1.4-.1-2.7-.5-4z"/>
+                            </svg>
+                            <span>Pay {PRICING.CURRENCY}{PRICING.MONTHLY_FEE} Directly through GPay</span>
                           </a>
 
                           {/* QR Code + Copy UPI ID Card */}
