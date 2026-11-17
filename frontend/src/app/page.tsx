@@ -27,16 +27,20 @@ export default function HomePage() {
   const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [viewMode, setViewMode] = useState<'canvas' | 'grid'>('canvas');
 
   // Fetch seat status & membership plans via Axios on component load
   const loadData = async () => {
     try {
       setLoading(true);
-      const [seatData, planData] = await Promise.all([fetchSeats(), fetchPlans()]);
+      setLoadError('');
+      setPlans(await fetchPlans());
+      const seatData = await fetchSeats();
       setSeats(seatData.seats);
-      setPlans(planData);
-    } catch (error) {
+    } catch (error: any) {
+      setSeats([]);
+      setLoadError(error.message || 'Unable to load availability. Please refresh.');
       console.error('Error loading initial home data:', error);
     } finally {
       setLoading(false);
@@ -126,6 +130,7 @@ export default function HomePage() {
             </div>
           </div>
 
+          {loadError && <p role="alert" className="rounded-xl bg-amber-50 p-4 text-amber-900">{loadError}</p>}
           {/* Render 2D Layout Canvas by default or Grid View */}
           {viewMode === 'canvas' ? (
             <KonvaWrapper

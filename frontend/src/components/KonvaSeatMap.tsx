@@ -65,9 +65,9 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
     return {
       id,
       seatNumber: `Seat #${id.toString().padStart(2, '0')}`,
-      status: 'available' as const,
+      status: 'unknown' as const,
       type: id <= 9 ? 'Standard Desk' : 'Premium Quiet Zone Desk',
-      pricePerMonth: 900,
+      pricePerMonth: PRICING.MONTHLY_FEE,
       hasPowerSocket: true,
       hasDeskLamp: true,
       shiftsOccupied: {
@@ -78,6 +78,7 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
     };
   });
   const activeSeats = rawSeats.filter((seat) => seat.id <= 18);
+  const availabilityKnown = seats.length > 0;
 
   const getSeatCoords = (seatId: number) => {
     switch (seatId) {
@@ -115,6 +116,7 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
   };
 
   const getSeatColors = (seat: Seat, isSelected: boolean) => {
+    if (seat.status === 'unknown') return { bg: '#F1F5F9', border: '#94A3B8', chairFill: '#64748B', glow: 'transparent', shadowBlur: 0 };
     if (seat.status === 'occupied') {
       return {
         bg: '#FEF3C7',
@@ -164,21 +166,24 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
 
   return (
     <div className="flex flex-col items-center w-full space-y-4">
+      {!availabilityKnown && <p role="status" className="text-sm text-slate-600">Room layout preview — grey seats have unverified availability. Booking is unavailable until the connection is restored.</p>}
       {/* Controls & Legend Header */}
       <div className="w-full flex flex-wrap items-center justify-between gap-3 bg-[#F4EFE6] p-4 rounded-2xl border border-[#E3DBD0]">
         <div className="flex items-center space-x-5 text-xs font-bold text-[#113826]">
+          {!availabilityKnown ? <span className="flex items-center gap-2"><span className="w-3.5 h-3.5 rounded-md bg-slate-100 border-2 border-slate-400" />Availability unknown</span> : <>
           <div className="flex items-center space-x-1.5">
             <span className="w-3.5 h-3.5 rounded-md bg-[#ECFDF5] border-2 border-[#059669]" />
             <span>Available</span>
           </div>
           <div className="flex items-center space-x-1.5">
             <span className="w-3.5 h-3.5 rounded-md bg-[#FEF3C7] border-2 border-[#F59E0B]" />
-            <span>Occupied</span>
+            <span>Pending / Confirm</span>
           </div>
           <div className="flex items-center space-x-1.5">
             <span className="w-3.5 h-3.5 rounded-md bg-[#113826] border-2 border-[#10B981]" />
             <span>Selected</span>
           </div>
+          </>}
         </div>
 
         <div className="flex items-center space-x-2">
@@ -350,7 +355,7 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
             <Layer>
               {activeSeats.map((seat) => {
                 const { x, y, orientation } = getSeatCoords(seat.id);
-                const isSelected = selectedSeatId === seat.id;
+                const isSelected = availabilityKnown && selectedSeatId === seat.id;
                 const isOccupied = seat.status === 'occupied';
                 const colors = getSeatColors(seat, isSelected);
                 const isHovered = hoveredSeat?.id === seat.id;
@@ -360,14 +365,14 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
                     key={`seat-group-${seat.id}`}
                     x={x}
                     y={y}
-                    onClick={() => !isOccupied && !isDragging && onSelectSeat(seat)}
-                    onTap={() => !isOccupied && !isDragging && onSelectSeat(seat)}
+                    onClick={() => seat.status === 'available' && !isDragging && onSelectSeat(seat)}
+                    onTap={() => seat.status === 'available' && !isDragging && onSelectSeat(seat)}
                     onMouseEnter={() => {
                       if (!isDragging) {
                         setHoveredSeat(seat);
                         const container = stageRef.current?.container();
                         if (container) {
-                          container.style.cursor = isOccupied ? 'not-allowed' : 'pointer';
+                          container.style.cursor = seat.status !== 'available' ? 'not-allowed' : 'pointer';
                         }
                       }
                     }}
@@ -483,15 +488,15 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
                   x={-68}
                   y={-14}
                   text={
-                    hoveredSeat?.status === 'occupied'
+                    !availabilityKnown ? 'AVAILABILITY UNKNOWN' : hoveredSeat?.status === 'occupied'
                       ? (hoveredSeat?.isInGracePeriod
                         ? `RESERVED (GRACE) • ${PRICING.CURRENCY}${PRICING.MONTHLY_FEE}/mo`
-                        : `OCCUPIED • ${PRICING.CURRENCY}${PRICING.MONTHLY_FEE}/mo`)
+                        : `${hoveredSeat?.isPending ? 'PENDING' : 'CONFIRM'} • ${PRICING.CURRENCY}${PRICING.MONTHLY_FEE}/mo`)
                       : `AVAILABLE • ${PRICING.CURRENCY}${PRICING.MONTHLY_FEE}/mo`
                   }
                   fontSize={11}
                   fontStyle="bold"
-                  fill={hoveredSeat?.status === 'occupied' ? '#FBBF24' : '#34D399'}
+                  fill={!availabilityKnown ? '#CBD5E1' : hoveredSeat?.status === 'occupied' ? '#FBBF24' : '#34D399'}
                   fontFamily="Inter, sans-serif"
                 />
                 <Text
@@ -512,7 +517,7 @@ export const KonvaSeatMap: React.FC<KonvaSeatMapProps> = ({ seats, selectedSeatI
       <div className="w-full flex flex-wrap items-center justify-between gap-3 text-xs text-[#55625B] px-2 font-medium">
         <div className="flex items-center space-x-2">
           <Sparkles className="w-4 h-4 text-emerald-600" />
-          <span>Click any available green seat to complete your monthly desk reservation.</span>
+          <span>{availabilityKnown ? 'Click any available green seat to complete your monthly desk reservation.' : '18 study desks. Contact reception to confirm availability.'}</span>
         </div>
         <div className="flex items-center space-x-3 text-[#113826] font-bold">
           <span>⚡ Dedicated Power</span>

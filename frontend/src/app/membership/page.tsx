@@ -16,6 +16,7 @@ export default function MembershipPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'new' | 'renew'>('new');
   const [modalShift, setModalShift] = useState<'morning' | 'evening' | 'fullday' | 'daypass'>('fullday');
+  const [modalDuration, setModalDuration] = useState(1);
 
   useEffect(() => {
     fetchPlans().then((res) => setPlans(res));
@@ -24,6 +25,7 @@ export default function MembershipPage() {
   const handleOpenNew = () => {
     setModalMode('new');
     setModalShift('fullday');
+    setModalDuration(1);
     setIsModalOpen(true);
   };
 
@@ -59,7 +61,7 @@ export default function MembershipPage() {
             onClick={handleOpenRenew}
             className="px-5 py-2.5 rounded-xl bg-[#EDE7DD] hover:bg-[#DDD6C8] text-[#113826] font-bold text-xs sm:text-sm border border-[#CFC5B4] shadow-sm transition-all active:scale-95"
           >
-            Existing Student: Renew Desk ({PRICING.CURRENCY}{PRICING.MONTHLY_FEE})
+            Check Booking Status / Renew
           </button>
         </div>
       </div>
@@ -103,6 +105,7 @@ export default function MembershipPage() {
               <button
                 onClick={() => {
                   setModalMode('new');
+                  setModalDuration(plan.id === 'quarterly-pass' ? 3 : 1);
                   if (plan.id === 'daily-pass') {
                     setModalShift('daypass');
                   } else {
@@ -160,6 +163,7 @@ export default function MembershipPage() {
         isOpen={isModalOpen}
         initialMode={modalMode}
         initialShift={modalShift}
+        initialDuration={modalDuration}
         onClose={() => setIsModalOpen(false)}
         onSuccess={() => {}}
       />

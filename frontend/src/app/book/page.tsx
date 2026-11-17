@@ -21,14 +21,18 @@ export default function BookPage() {
   const [modalMode, setModalMode] = useState<'new' | 'renew'>('new');
   const [modalShift, setModalShift] = useState<'morning' | 'evening' | 'fullday' | 'daypass'>('fullday');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [viewMode, setViewMode] = useState<'canvas' | 'grid'>('canvas');
 
   const loadSeats = async () => {
     try {
       setLoading(true);
+      setLoadError('');
       const data = await fetchSeats();
       setSeats(data.seats);
-    } catch (err) {
+    } catch (err: any) {
+      setSeats([]);
+      setLoadError(err.message || 'Unable to load availability. Please refresh.');
       console.error('Error fetching seats:', err);
     } finally {
       setLoading(false);
@@ -37,9 +41,17 @@ export default function BookPage() {
 
   useEffect(() => {
     loadSeats();
+    // Other customers may reserve a seat while this page is open.
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') loadSeats();
+    }, 15000);
+    const refreshOnFocus = () => { loadSeats(); };
+    window.addEventListener('focus', refreshOnFocus);
+    return () => { window.clearInterval(interval); window.removeEventListener('focus', refreshOnFocus); };
   }, []);
 
   const handleSelectSeat = (seat: Seat) => {
+    if (seat.status !== 'available') return;
     setSelectedSeat(seat);
     setModalMode('new');
     setModalShift('fullday');
@@ -101,7 +113,7 @@ export default function BookPage() {
             className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-[#EDE7DD] hover:bg-[#DDD6C8] text-[#113826] font-bold text-xs sm:text-sm border border-[#CFC5B4] shadow-sm transition-all active:scale-95"
           >
             <RefreshCw className="w-4 h-4 text-emerald-700" />
-            <span>Existing Student Renewal ({PRICING.CURRENCY}{PRICING.MONTHLY_FEE})</span>
+            <span>Check Booking Status / Renew</span>
           </button>
         </div>
       </div>
@@ -152,6 +164,7 @@ export default function BookPage() {
           </div>
         </div>
 
+        {loadError && <p role="alert" className="rounded-xl bg-amber-50 p-4 text-amber-900">{loadError}</p>}
         {/* View Component Render */}
         {viewMode === 'canvas' ? (
           <KonvaWrapper

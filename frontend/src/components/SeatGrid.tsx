@@ -8,6 +8,7 @@
 
 import React from 'react';
 import { Seat } from '../lib/api';
+import { PRICING } from '../lib/pricing';
 import { Zap, Lamp, CheckCircle, Lock } from 'lucide-react';
 
 interface SeatGridProps {
@@ -22,9 +23,9 @@ export const SeatGrid: React.FC<SeatGridProps> = ({ seats, selectedSeatId, onSel
     return {
       id,
       seatNumber: `Seat #${id.toString().padStart(2, '0')}`,
-      status: 'available' as const,
+      status: 'unknown' as const,
       type: id <= 9 ? 'Standard Desk' : 'Premium Quiet Zone Desk',
-      pricePerMonth: 900,
+      pricePerMonth: PRICING.MONTHLY_FEE,
       hasPowerSocket: true,
       hasDeskLamp: true,
       shiftsOccupied: {
@@ -35,38 +36,44 @@ export const SeatGrid: React.FC<SeatGridProps> = ({ seats, selectedSeatId, onSel
     };
   });
   const activeSeats = rawSeats.filter((seat) => seat.id <= 18);
+  const availabilityKnown = seats.length > 0;
   return (
     <div className="space-y-6">
       {/* Legend & Seat Count Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-[#F2EDE4] p-4 rounded-xl border border-[#E4DDD0]">
         <div className="flex items-center space-x-6">
+          {!availabilityKnown ? <span className="flex items-center gap-2 text-sm"><span className="w-4 h-4 rounded-md bg-slate-100 border border-slate-400" />Availability unknown</span> : <>
           <div className="flex items-center space-x-2">
             <span className="w-4 h-4 rounded-md bg-emerald-600 border border-emerald-700" />
             <span className="text-sm font-semibold text-[#2C3531]">Available</span>
           </div>
           <div className="flex items-center space-x-2">
             <span className="w-4 h-4 rounded-md bg-amber-500 border border-amber-600" />
-            <span className="text-sm font-semibold text-[#2C3531]">Occupied</span>
+            <span className="text-sm font-semibold text-[#2C3531]">Pending / Confirm</span>
           </div>
           <div className="flex items-center space-x-2">
             <span className="w-4 h-4 rounded-md bg-[#113826] border border-[#0B2318]" />
             <span className="text-sm font-semibold text-[#2C3531]">Selected</span>
           </div>
+          </>}
         </div>
 
         <div className="text-sm font-bold text-[#113826]">
-          Capacity: {activeSeats.filter((s) => s.status === 'available').length} / {activeSeats.length} Seats Available
+          {availabilityKnown ? `Capacity: ${activeSeats.filter((s) => s.status === 'available').length} / ${activeSeats.length} Seats Available` : '18 desks — layout preview only'}
         </div>
       </div>
 
       {/* 20 Study Cubicles Grid Layout */}
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10 gap-3">
         {activeSeats.map((seat) => {
-          const isSelected = selectedSeatId === seat.id;
+          const isSelected = availabilityKnown && selectedSeatId === seat.id;
+          const isUnknown = seat.status === 'unknown';
           const isOccupied = seat.status === 'occupied';
 
-          let buttonStyle = 'bg-white border-[#DCD5C8] text-[#1E2421] hover:border-[#113826] hover:shadow-md';
-          if (isOccupied) {
+          let buttonStyle = 'bg-emerald-50 border-emerald-600 text-[#1E2421] hover:border-[#113826] hover:shadow-md';
+          if (isUnknown) {
+            buttonStyle = 'bg-slate-100 border-slate-300 text-slate-600 cursor-not-allowed';
+          } else if (isOccupied) {
             buttonStyle = 'bg-amber-50/80 border-amber-200 text-amber-900 cursor-not-allowed opacity-80';
           } else if (isSelected) {
             buttonStyle = 'bg-[#113826] border-[#0B2318] text-white ring-2 ring-[#113826] shadow-lg scale-105';
@@ -75,8 +82,8 @@ export const SeatGrid: React.FC<SeatGridProps> = ({ seats, selectedSeatId, onSel
           return (
             <button
               key={seat.id}
-              disabled={isOccupied}
-              onClick={() => !isOccupied && onSelectSeat(seat)}
+              disabled={seat.status !== 'available'}
+              onClick={() => seat.status === 'available' && onSelectSeat(seat)}
               className={`relative p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-between min-h-[110px] ${buttonStyle}`}
             >
               {/* Top Badge: Seat Number */}
@@ -122,8 +129,8 @@ export const SeatGrid: React.FC<SeatGridProps> = ({ seats, selectedSeatId, onSel
                   <span className="font-extrabold text-xs">DESK</span>
                 </div>
                 <span className="text-xs font-semibold mt-1">
-                  {isOccupied
-                    ? (seat.isInGracePeriod ? 'Reserved' : 'Occupied')
+                  {isUnknown ? 'Unknown' : isOccupied
+                    ? (seat.isPending ? 'Pending' : seat.isInGracePeriod ? 'Reserved' : 'Confirm')
                     : seat.shiftsOccupied?.morning && !seat.shiftsOccupied?.evening
                     ? 'Eve Available'
                     : seat.shiftsOccupied?.evening && !seat.shiftsOccupied?.morning
